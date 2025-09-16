@@ -20,7 +20,12 @@ include_directories(include)
 set(SOURCES
     src/main.cpp
     src/mainwindow.cpp
+    src/mainwindow_ui_setup.cpp
+    src/mainwindow_controls.cpp
+    src/mainwindow_synthesizer.cpp
+    src/mainwindow_internals.cpp
     src/keyboardwidget.cpp
+    src/tracker.cpp
     src/fm.cpp
     src/algorithms.cpp
     src/presets.cpp
@@ -30,6 +35,7 @@ set(SOURCES
 set(HEADERS
     include/mainwindow.hpp
     include/keyboardwidget.hpp
+    include/tracker.hpp
     include/fm.hpp
     include/presets.hpp
 )

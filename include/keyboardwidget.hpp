@@ -17,6 +17,9 @@ public:
     
     void setActiveNotes(const std::set<int>& notes);
     void setKeyMapping(const std::map<Qt::Key, int>& keyMap);
+    void setAlignment(Qt::Alignment alignment);
+    void setCurrentOctave(int octave);
+    int getCurrentOctave() const { return currentOctave_; }
 
 signals:
     void keyPressed(int note);
@@ -24,6 +27,7 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
@@ -46,11 +50,11 @@ private:
     std::vector<KeyInfo> keys_;
     std::set<int> activeNotes_;
     std::map<Qt::Key, int> keyToNoteMap_;
+    Qt::Alignment alignment_;
+    int currentOctave_;
     
     // Visual constants
     static constexpr int KEY_HEIGHT = 100;
-    static constexpr int WHITE_KEY_WIDTH = 40;
-    static constexpr int BLACK_KEY_WIDTH = 25;
     static constexpr int BLACK_KEY_HEIGHT = 60;
     
     // Colors
@@ -60,5 +64,11 @@ private:
     static const QColor KEY_BORDER_COLOR;
     
     // Constants
-    static constexpr int OCTAVE_START = 60; // Middle C (C4)
+    static constexpr int OCTAVE_START = 36; // C2 - lower starting note
+    static constexpr int KEYS_PER_OCTAVE = 12; // 12 keys per octave
+    static constexpr int WHITE_KEYS_PER_OCTAVE = 7;
+    static constexpr int BLACK_KEYS_PER_OCTAVE = 5;
+    static constexpr int OCTAVES_DISPLAYED = 4; // Show 4 octaves
+    static constexpr int MIN_OCTAVE = 2; // C2
+    static constexpr int MAX_OCTAVE = 4; // C5 (since we show 4 octaves starting from current)
 };

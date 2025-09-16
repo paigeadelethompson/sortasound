@@ -1,6 +1,7 @@
 #include "keyboardwidget.hpp"
 #include <QPainter>
 #include <QMouseEvent>
+#include <QResizeEvent>
 #include <QApplication>
 #include <algorithm>
 
@@ -12,9 +13,11 @@ const QColor KeyboardWidget::KEY_BORDER_COLOR = QColor(128, 128, 128);
 
 KeyboardWidget::KeyboardWidget(QWidget *parent)
     : QWidget(parent)
+    , alignment_(Qt::AlignLeft)
+    , currentOctave_(2) // Start at C2
 {
-    setMinimumHeight(KEY_HEIGHT + 20);
-    setMaximumHeight(KEY_HEIGHT + 20);
+    setMinimumHeight(KEY_HEIGHT);
+    setMaximumHeight(KEY_HEIGHT);
     setFocusPolicy(Qt::NoFocus); // Don't capture keyboard focus
     setAttribute(Qt::WA_NoMouseReplay); // Don't replay mouse events
     setAttribute(Qt::WA_TransparentForMouseEvents, false); // Allow mouse events for clicking
@@ -37,91 +40,73 @@ void KeyboardWidget::setKeyMapping(const std::map<Qt::Key, int>& keyMap)
     setupKeys();
 }
 
+void KeyboardWidget::setAlignment(Qt::Alignment alignment)
+{
+    alignment_ = alignment;
+    setupKeys();
+}
+
+void KeyboardWidget::setCurrentOctave(int octave)
+{
+    currentOctave_ = qBound(MIN_OCTAVE, octave, MAX_OCTAVE);
+    setupKeys();
+}
+
 void KeyboardWidget::setupKeys()
 {
     keys_.clear();
     
-    // Create keys for the three octave parts
-    int x = 10;
-    int keyIndex = 0;
+    // Calculate available width and key dimensions for 4 octaves
+    int availableWidth = width(); // Use full width, no margins
+    int totalWhiteKeys = OCTAVES_DISPLAYED * WHITE_KEYS_PER_OCTAVE; // 4 octaves * 7 white keys = 28 white keys
     
-    // Part 1: q to ] (12 keys)
-    std::vector<Qt::Key> part1Keys = {
-        Qt::Key_Q, Qt::Key_W, Qt::Key_E, Qt::Key_R, Qt::Key_T, Qt::Key_Y,
-        Qt::Key_U, Qt::Key_I, Qt::Key_O, Qt::Key_P, Qt::Key_BracketLeft, Qt::Key_BracketRight
-    };
+    // Use full available width for keys to eliminate right padding
+    int whiteKeyWidth = availableWidth / totalWhiteKeys; // Use exact division to fill full width
+    int blackKeyWidth = qMax(3, static_cast<int>(whiteKeyWidth * 0.6)); // Minimum 3px for black keys
     
-    for (int i = 0; i < 12; i++) {
-        KeyInfo key;
-        key.key = part1Keys[i];
-        key.note = OCTAVE_START + i;
-        key.isBlack = (i == 1 || i == 3 || i == 6 || i == 8 || i == 10); // C#, D#, F#, G#, A#
-        key.isActive = false;
-        
-        if (key.isBlack) {
-            key.rect = QRect(x - BLACK_KEY_WIDTH/2, 10, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT);
-        } else {
-            key.rect = QRect(x, 10, WHITE_KEY_WIDTH, KEY_HEIGHT);
-            x += WHITE_KEY_WIDTH;
+    qDebug() << "KeyboardWidget::setupKeys - availableWidth:" << availableWidth << "whiteKeyWidth:" << whiteKeyWidth;
+    
+    // Always start at left edge to eliminate padding
+    int startX = 0;
+    
+    // Define the pattern of white and black keys in an octave
+    std::vector<bool> octavePattern = {false, true, false, true, false, false, true, false, true, false, true, false}; // C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+    
+    int x = startX;
+    int note = currentOctave_ * 12; // Calculate starting note for current octave
+    
+    // Create keys for 4 octaves
+    for (int octave = 0; octave < OCTAVES_DISPLAYED; octave++) {
+        for (int i = 0; i < KEYS_PER_OCTAVE; i++) {
+            KeyInfo key;
+            key.note = note;
+            key.isBlack = octavePattern[i];
+            key.isActive = false;
+            
+            if (key.isBlack) {
+                // Position black keys between white keys
+                key.rect = QRect(x - blackKeyWidth/2, 0, blackKeyWidth, BLACK_KEY_HEIGHT);
+            } else {
+                // White keys
+                key.rect = QRect(x, 0, whiteKeyWidth, KEY_HEIGHT);
+                x += whiteKeyWidth;
+            }
+            
+            keys_.push_back(key);
+            note++;
         }
-        
-        keys_.push_back(key);
-    }
-    
-    // Add spacing between parts
-    x += 20;
-    
-    // Part 2: a to ' (12 keys)
-    std::vector<Qt::Key> part2Keys = {
-        Qt::Key_A, Qt::Key_S, Qt::Key_D, Qt::Key_F, Qt::Key_G, Qt::Key_H,
-        Qt::Key_J, Qt::Key_K, Qt::Key_L, Qt::Key_Semicolon, Qt::Key_QuoteLeft, Qt::Key_QuoteDbl
-    };
-    
-    for (int i = 0; i < 12; i++) {
-        KeyInfo key;
-        key.key = part2Keys[i];
-        key.note = OCTAVE_START + 12 + i;
-        key.isBlack = (i == 1 || i == 3 || i == 6 || i == 8 || i == 10); // C#, D#, F#, G#, A#
-        key.isActive = false;
-        
-        if (key.isBlack) {
-            key.rect = QRect(x - BLACK_KEY_WIDTH/2, 10, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT);
-        } else {
-            key.rect = QRect(x, 10, WHITE_KEY_WIDTH, KEY_HEIGHT);
-            x += WHITE_KEY_WIDTH;
-        }
-        
-        keys_.push_back(key);
-    }
-    
-    // Add spacing between parts
-    x += 20;
-    
-    // Part 3: z to / (11 keys)
-    std::vector<Qt::Key> part3Keys = {
-        Qt::Key_Z, Qt::Key_X, Qt::Key_C, Qt::Key_V, Qt::Key_B, Qt::Key_N,
-        Qt::Key_M, Qt::Key_Comma, Qt::Key_Period, Qt::Key_Slash
-    };
-    
-    for (int i = 0; i < 10; i++) {
-        KeyInfo key;
-        key.key = part3Keys[i];
-        key.note = OCTAVE_START + 24 + i;
-        key.isBlack = (i == 1 || i == 3 || i == 6 || i == 8); // C#, D#, F#, G#
-        key.isActive = false;
-        
-        if (key.isBlack) {
-            key.rect = QRect(x - BLACK_KEY_WIDTH/2, 10, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT);
-        } else {
-            key.rect = QRect(x, 10, WHITE_KEY_WIDTH, KEY_HEIGHT);
-            x += WHITE_KEY_WIDTH;
-        }
-        
-        keys_.push_back(key);
     }
     
     // Update active states
     updateActiveStates();
+}
+
+void KeyboardWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    qDebug() << "KeyboardWidget::resizeEvent - new size:" << event->size();
+    setupKeys(); // Recalculate key positions when window is resized
+    update(); // Force immediate repaint
 }
 
 void KeyboardWidget::updateActiveStates()
@@ -155,15 +140,28 @@ void KeyboardWidget::paintEvent(QPaintEvent *event)
         }
     }
     
-    // Draw labels
+    // Draw note labels for white keys (only show C notes to avoid clutter)
     painter.setPen(Qt::black);
-    painter.setFont(QFont("Arial", 8));
+    painter.setFont(QFont("Arial", 7));
+    
+    QString noteNames[] = {"C", "D", "E", "F", "G", "A", "B"};
+    int noteIndex = 0;
+    int currentOctaveForLabel = currentOctave_;
     
     for (const auto& key : keys_) {
         if (!key.isBlack) {
-            QString keyText = QKeySequence(key.key).toString();
-            QRect textRect = key.rect.adjusted(0, KEY_HEIGHT - 20, 0, -5);
-            painter.drawText(textRect, Qt::AlignCenter, keyText);
+            // Only show C notes to avoid clutter
+            if (noteIndex % 7 == 0) { // C notes are at positions 0, 7, 14, 21
+                QString noteText = QString("C%1").arg(currentOctaveForLabel);
+                QRect textRect = key.rect.adjusted(0, KEY_HEIGHT - 15, 0, -5);
+                painter.drawText(textRect, Qt::AlignCenter, noteText);
+            }
+            
+            noteIndex++;
+            // Move to next octave after 7 white keys
+            if (noteIndex % 7 == 0) {
+                currentOctaveForLabel++;
+            }
         }
     }
 }
@@ -198,9 +196,10 @@ void KeyboardWidget::mousePressEvent(QMouseEvent *event)
 
 void KeyboardWidget::mouseReleaseEvent(QMouseEvent *event)
 {
-    Q_UNUSED(event)
-    // For simplicity, we'll handle note off through the main window
-    // This could be enhanced to track mouse press/release per key
+    KeyInfo* key = getKeyAt(event->pos());
+    if (key) {
+        emit keyReleased(key->note);
+    }
 }
 
 void KeyboardWidget::keyPressEvent(QKeyEvent *event)

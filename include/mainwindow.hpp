@@ -12,6 +12,8 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <QTabWidget>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <memory>
 #include <map>
 #include <set>
@@ -20,6 +22,7 @@
 #include "presets.hpp"
 #include "keyboardwidget.hpp"
 #include "fm.hpp"
+#include "tracker.hpp"
 
 class MainWindow : public QMainWindow
 {
@@ -46,30 +49,52 @@ private slots:
     void onPitchBendChanged(int value);
     void onModWheelChanged(int value);
     void onOperatorParameterChanged();
+    void onSynthesizerChanged(int index);
+    void onAddSynthesizer();
+    void onRemoveSynthesizer();
+    void refreshInternalsTab();
+    void onTrackerNoteTriggered(int note, int velocity, int channel);
+    void onTrackerNoteReleased(int note, int channel);
+    void onOctaveChanged(int octave);
+    void onKeyboardKeyPressed(int note);
+    void onKeyboardKeyReleased(int note);
 
 private:
     void setupUI();
     void setupKeyboardMapping();
-    void setupOperatorTabs();
+    void updateKeyboardMapping();
+    void setupInternalsTabConnections();
     int keyToNote(Qt::Key key) const;
     void noteOn(int note);
     void noteOff(int note);
     void allNotesOff();
+    void updateSynthesizerSelector();
+    toybasic::FMSynthesizer* getCurrentSynthesizer();
 
     // UI Components
     QWidget *centralWidget_;
     QVBoxLayout *mainLayout_;
     QHBoxLayout *controlsLayout_;
+    QTabWidget *mainTabWidget_;
     
     
-    // FM Synthesizer
-    std::unique_ptr<toybasic::FMSynthesizer> synthesizer_;
+    // FM Synthesizer instances
+    std::vector<std::unique_ptr<toybasic::FMSynthesizer>> synthesizers_;
+    int currentSynthesizerIndex_;
     
     // Preset Manager
     std::unique_ptr<toybasic::PresetManager> presetManager_;
     
     // Keyboard Widget
     KeyboardWidget *keyboardWidget_;
+    
+    // Tracker Widget
+    TrackerWidget *trackerWidget_;
+    
+    // Octave selector
+    QGroupBox *octaveGroup_;
+    QSpinBox *octaveSpinBox_;
+    QLabel *octaveLabel_;
     
     // Control Widgets
     QGroupBox *volumeGroup_;
@@ -91,11 +116,26 @@ private:
     QGroupBox *algorithmGroup_;
     QComboBox *algorithmCombo_;
     
-    QGroupBox *operatorGroup_;
-    QTabWidget *operatorTabs_;
-    std::vector<QWidget*> operatorPages_;
+    // Internals tab controls
+    QSpinBox *audioBitsSpinBox_;
+    QSpinBox *audioMaxSpinBox_;
+    QSpinBox *audioMinSpinBox_;
+    QDoubleSpinBox *audioScaleSpinBox_;
+    QSpinBox *midiA4NoteSpinBox_;
+    QDoubleSpinBox *midiA4FreqSpinBox_;
+    QSpinBox *midiNotesSpinBox_;
+    QSpinBox *maxVoicesSpinBox_;
+    QSpinBox *maxOpsSpinBox_;
+    QSpinBox *maxChannelsSpinBox_;
+    QSpinBox *maxAlgsSpinBox_;
+    QDoubleSpinBox *minEnvTimeSpinBox_;
+    QDoubleSpinBox *maxEnvTimeSpinBox_;
+    QDoubleSpinBox *minVolumeSpinBox_;
+    QDoubleSpinBox *maxVolumeSpinBox_;
+    QDoubleSpinBox *minAmplitudeSpinBox_;
+    QDoubleSpinBox *maxAmplitudeSpinBox_;
     
-    QGroupBox *modulationGroup_;
+    // Old operator and modulation groups removed - now using tabs
     QSlider *pitchBendSlider_;
     QSlider *modWheelSlider_;
     QLabel *pitchBendLabel_;
@@ -103,6 +143,12 @@ private:
     
     QGroupBox *channelGroup_;
     QComboBox *channelCombo_;
+    
+    // Synthesizer management
+    QGroupBox *synthManagerGroup_;
+    QComboBox *synthSelector_;
+    QPushButton *addSynthButton_;
+    QPushButton *removeSynthButton_;
     
     // Keyboard mapping
     std::map<Qt::Key, int> keyToNoteMap_;

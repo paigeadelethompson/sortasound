@@ -18,7 +18,39 @@ FMSynthesizer::FMSynthesizer(int sampleRate)
       audioThreadRunning_(false), shouldStop_(false),
       sampleBuffer_(BUFFER_SIZE * 2), bufferWritePos_(0), bufferReadPos_(0),
       sampleStream_(std::make_unique<FMSampleStream>()),
-      audioIODevice_(nullptr), audioSink_(nullptr) {
+      audioIODevice_(nullptr), audioSink_(nullptr),
+      // Initialize configurable properties with constant defaults
+      freqPrecisionBits_(Constants::FREQ_PRECISION_BITS),
+      freqPrecisionScale_(Constants::FREQ_PRECISION_SCALE),
+      freqPrecisionInv_(Constants::FREQ_PRECISION_INV),
+      audioBits_(Constants::AUDIO_BITS),
+      audioMaxValue_(Constants::AUDIO_MAX_VALUE),
+      audioMinValue_(Constants::AUDIO_MIN_VALUE),
+      audioScale_(Constants::AUDIO_SCALE),
+      midiA4Note_(Constants::MIDI_A4_NOTE),
+      midiA4Frequency_(Constants::MIDI_A4_FREQUENCY),
+      midiNotesPerOctave_(Constants::MIDI_NOTES_PER_OCTAVE),
+      maxVoices_(Constants::MAX_VOICES),
+      maxOperators_(Constants::MAX_OPERATORS),
+      maxChannels_(Constants::MAX_CHANNELS),
+      maxAlgorithms_(Constants::MAX_ALGORITHMS),
+      maxMidiChannels_(Constants::MAX_MIDI_CHANNELS),
+      minEnvelopeTime_(Constants::MIN_ENVELOPE_TIME),
+      maxEnvelopeTime_(Constants::MAX_ENVELOPE_TIME),
+      minVolume_(Constants::MIN_VOLUME),
+      maxVolume_(Constants::MAX_VOLUME),
+      minAmplitude_(Constants::MIN_AMPLITUDE),
+      maxAmplitude_(Constants::MAX_AMPLITUDE),
+      maxEffectAmount_(Constants::MAX_EFFECT_AMOUNT),
+      minEffectAmount_(Constants::MIN_EFFECT_AMOUNT),
+      distortionGainMultiplier_(Constants::DISTORTION_GAIN_MULTIPLIER),
+      chorusFrequency_(Constants::CHORUS_FREQUENCY),
+      chorusDepth_(Constants::CHORUS_DEPTH),
+      reverbGain_(Constants::REVERB_GAIN),
+      panLeft_(Constants::PAN_LEFT),
+      panCenter_(Constants::PAN_CENTER),
+      panRight_(Constants::PAN_RIGHT),
+      panScale_(Constants::PAN_SCALE) {
     
     // Initialize default preset configuration
     for (int i = 0; i < 6; i++) {
@@ -853,5 +885,48 @@ void FMSynthesizerManager::setGlobalDistortion(double amount) {
         }
     }
 }
+
+// Property setter implementations
+void FMSynthesizer::setFreqPrecisionBits(int bits) { 
+    freqPrecisionBits_ = bits; 
+    freqPrecisionScale_ = std::pow(2.0, bits);
+    freqPrecisionInv_ = 1.0 / freqPrecisionScale_;
+}
+void FMSynthesizer::setFreqPrecisionScale(double scale) { 
+    freqPrecisionScale_ = scale; 
+    freqPrecisionInv_ = 1.0 / scale;
+}
+void FMSynthesizer::setFreqPrecisionInv(double inv) { 
+    freqPrecisionInv_ = inv; 
+    freqPrecisionScale_ = 1.0 / inv;
+}
+void FMSynthesizer::setAudioBits(int bits) { audioBits_ = bits; }
+void FMSynthesizer::setAudioMaxValue(int value) { audioMaxValue_ = value; }
+void FMSynthesizer::setAudioMinValue(int value) { audioMinValue_ = value; }
+void FMSynthesizer::setAudioScale(double scale) { audioScale_ = scale; }
+void FMSynthesizer::setMidiA4Note(int note) { midiA4Note_ = note; }
+void FMSynthesizer::setMidiA4Frequency(double frequency) { midiA4Frequency_ = frequency; }
+void FMSynthesizer::setMidiNotesPerOctave(int notes) { midiNotesPerOctave_ = notes; }
+void FMSynthesizer::setMaxVoices(int voices) { maxVoices_ = voices; }
+void FMSynthesizer::setMaxOperators(int operators) { maxOperators_ = operators; }
+void FMSynthesizer::setMaxChannels(int channels) { maxChannels_ = channels; }
+void FMSynthesizer::setMaxAlgorithms(int algorithms) { maxAlgorithms_ = algorithms; }
+void FMSynthesizer::setMaxMidiChannels(int channels) { maxMidiChannels_ = channels; }
+void FMSynthesizer::setMinEnvelopeTime(double time) { minEnvelopeTime_ = time; }
+void FMSynthesizer::setMaxEnvelopeTime(double time) { maxEnvelopeTime_ = time; }
+void FMSynthesizer::setMinVolume(double volume) { minVolume_ = volume; }
+void FMSynthesizer::setMaxVolume(double volume) { maxVolume_ = volume; }
+void FMSynthesizer::setMinAmplitude(double amplitude) { minAmplitude_ = amplitude; }
+void FMSynthesizer::setMaxAmplitude(double amplitude) { maxAmplitude_ = amplitude; }
+void FMSynthesizer::setMaxEffectAmount(double amount) { maxEffectAmount_ = amount; }
+void FMSynthesizer::setMinEffectAmount(double amount) { minEffectAmount_ = amount; }
+void FMSynthesizer::setDistortionGainMultiplier(double multiplier) { distortionGainMultiplier_ = multiplier; }
+void FMSynthesizer::setChorusFrequency(double frequency) { chorusFrequency_ = frequency; }
+void FMSynthesizer::setChorusDepth(double depth) { chorusDepth_ = depth; }
+void FMSynthesizer::setReverbGain(double gain) { reverbGain_ = gain; }
+void FMSynthesizer::setPanLeft(double pan) { panLeft_ = pan; }
+void FMSynthesizer::setPanCenter(double pan) { panCenter_ = pan; }
+void FMSynthesizer::setPanRight(double pan) { panRight_ = pan; }
+void FMSynthesizer::setPanScale(double scale) { panScale_ = scale; }
 
 } // namespace toybasic

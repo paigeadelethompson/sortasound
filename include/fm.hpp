@@ -381,6 +381,70 @@ public:
     
     // 22-bit precision frequency calculations
     double calculatePhaseIncrement22Bit(double frequency);
+    
+    // Property getters and setters
+    int getFreqPrecisionBits() const { return freqPrecisionBits_; }
+    void setFreqPrecisionBits(int bits);
+    double getFreqPrecisionScale() const { return freqPrecisionScale_; }
+    void setFreqPrecisionScale(double scale);
+    double getFreqPrecisionInv() const { return freqPrecisionInv_; }
+    void setFreqPrecisionInv(double inv);
+    int getAudioBits() const { return audioBits_; }
+    void setAudioBits(int bits);
+    int getAudioMaxValue() const { return audioMaxValue_; }
+    void setAudioMaxValue(int value);
+    int getAudioMinValue() const { return audioMinValue_; }
+    void setAudioMinValue(int value);
+    double getAudioScale() const { return audioScale_; }
+    void setAudioScale(double scale);
+    int getMidiA4Note() const { return midiA4Note_; }
+    void setMidiA4Note(int note);
+    double getMidiA4Frequency() const { return midiA4Frequency_; }
+    void setMidiA4Frequency(double frequency);
+    int getMidiNotesPerOctave() const { return midiNotesPerOctave_; }
+    void setMidiNotesPerOctave(int notes);
+    int getMaxVoices() const { return maxVoices_; }
+    void setMaxVoices(int voices);
+    int getMaxOperators() const { return maxOperators_; }
+    void setMaxOperators(int operators);
+    int getMaxChannels() const { return maxChannels_; }
+    void setMaxChannels(int channels);
+    int getMaxAlgorithms() const { return maxAlgorithms_; }
+    void setMaxAlgorithms(int algorithms);
+    int getMaxMidiChannels() const { return maxMidiChannels_; }
+    void setMaxMidiChannels(int channels);
+    double getMinEnvelopeTime() const { return minEnvelopeTime_; }
+    void setMinEnvelopeTime(double time);
+    double getMaxEnvelopeTime() const { return maxEnvelopeTime_; }
+    void setMaxEnvelopeTime(double time);
+    double getMinVolume() const { return minVolume_; }
+    void setMinVolume(double volume);
+    double getMaxVolume() const { return maxVolume_; }
+    void setMaxVolume(double volume);
+    double getMinAmplitude() const { return minAmplitude_; }
+    void setMinAmplitude(double amplitude);
+    double getMaxAmplitude() const { return maxAmplitude_; }
+    void setMaxAmplitude(double amplitude);
+    double getMaxEffectAmount() const { return maxEffectAmount_; }
+    void setMaxEffectAmount(double amount);
+    double getMinEffectAmount() const { return minEffectAmount_; }
+    void setMinEffectAmount(double amount);
+    double getDistortionGainMultiplier() const { return distortionGainMultiplier_; }
+    void setDistortionGainMultiplier(double multiplier);
+    double getChorusFrequency() const { return chorusFrequency_; }
+    void setChorusFrequency(double frequency);
+    double getChorusDepth() const { return chorusDepth_; }
+    void setChorusDepth(double depth);
+    double getReverbGain() const { return reverbGain_; }
+    void setReverbGain(double gain);
+    double getPanLeft() const { return panLeft_; }
+    void setPanLeft(double pan);
+    double getPanCenter() const { return panCenter_; }
+    void setPanCenter(double pan);
+    double getPanRight() const { return panRight_; }
+    void setPanRight(double pan);
+    double getPanScale() const { return panScale_; }
+    void setPanScale(double scale);
 
 private:
     // Operator structure
@@ -443,6 +507,39 @@ private:
     int sampleRate_;
     double masterVolume_;
     double timeStep_;
+    
+    // Configurable synthesizer properties
+    int freqPrecisionBits_;
+    double freqPrecisionScale_;
+    double freqPrecisionInv_;
+    int audioBits_;
+    int audioMaxValue_;
+    int audioMinValue_;
+    double audioScale_;
+    int midiA4Note_;
+    double midiA4Frequency_;
+    int midiNotesPerOctave_;
+    int maxVoices_;
+    int maxOperators_;
+    int maxChannels_;
+    int maxAlgorithms_;
+    int maxMidiChannels_;
+    double minEnvelopeTime_;
+    double maxEnvelopeTime_;
+    double minVolume_;
+    double maxVolume_;
+    double minAmplitude_;
+    double maxAmplitude_;
+    double maxEffectAmount_;
+    double minEffectAmount_;
+    double distortionGainMultiplier_;
+    double chorusFrequency_;
+    double chorusDepth_;
+    double reverbGain_;
+    double panLeft_;
+    double panCenter_;
+    double panRight_;
+    double panScale_;
     
     // Preset configuration storage
     struct PresetConfig {
