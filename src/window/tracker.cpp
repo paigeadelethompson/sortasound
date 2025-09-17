@@ -1,10 +1,34 @@
+/*
+ * SortaSound - Advanced FM Synthesizer
+ * Copyright (C) 2024  Paige Thompson <paige@paige.bio>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "window/tracker.hpp"
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QDebug>
 #include <QApplication>
 
-// TrackerStep implementation
+
+/**
+ * @brief Constructor for TrackerStep
+ * 
+ * Creates a new tracker step with default values. A step represents a single
+ * note event in a tracker pattern with note, instrument, volume, and effects.
+ */
 TrackerStep::TrackerStep()
     : note(0)
     , instrument(0)
@@ -16,6 +40,14 @@ TrackerStep::TrackerStep()
 {
 }
 
+/**
+ * @brief Convert tracker step to string representation
+ * 
+ * Converts the tracker step data to a human-readable string format
+ * that can be displayed in the tracker interface.
+ * 
+ * @return String representation of the step
+ */
 QString TrackerStep::toString() const {
     if (!active) {
         return "---";
@@ -23,7 +55,6 @@ QString TrackerStep::toString() const {
     
     QString result;
     
-    // Note
     if (note > 0) {
         QString noteNames[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
         int octave = (note - 12) / 12;
@@ -33,13 +64,10 @@ QString TrackerStep::toString() const {
         result += "---";
     }
     
-    // Instrument
     result += QString(" I%1").arg(instrument, 2, 10, QChar('0'));
     
-    // Volume
     result += QString(" V%1").arg(volume, 3, 10, QChar('0'));
     
-    // Effects
     if (effect1 > 0 || effect2 > 0 || effect3 > 0) {
         result += QString(" E%1%2%3")
             .arg(effect1, 2, 16, QChar('0'))
@@ -50,8 +78,16 @@ QString TrackerStep::toString() const {
     return result;
 }
 
+/**
+ * @brief Parse tracker step from string representation
+ * 
+ * Parses a string representation of a tracker step and sets the
+ * step data accordingly. This is used for loading step data from
+ * the tracker interface.
+ * 
+ * @param str String representation to parse
+ */
 void TrackerStep::fromString(const QString& str) {
-    // Simple parser - in a real implementation this would be more robust
     if (str.trimmed() == "---" || str.trimmed().isEmpty()) {
         active = false;
         note = 0;
@@ -62,14 +98,20 @@ void TrackerStep::fromString(const QString& str) {
     }
     
     active = true;
-    // For now, just set basic values - full parsing would be more complex
     note = 60; // Middle C
     instrument = 0;
     volume = 127;
     effect1 = effect2 = effect3 = 0;
 }
 
-// TrackerChannel implementation
+/**
+ * @brief Constructor for TrackerChannel
+ * 
+ * Creates a new tracker channel with the specified number of steps.
+ * A channel represents a single track in a tracker pattern.
+ * 
+ * @param steps Number of steps in the channel
+ */
 TrackerChannel::TrackerChannel(int steps)
     : stepCount_(steps)
     , name_("Channel")
@@ -79,6 +121,15 @@ TrackerChannel::TrackerChannel(int steps)
     steps_.resize(steps);
 }
 
+/**
+ * @brief Get a step at a specific position
+ * 
+ * Returns a reference to the step at the given position in the channel.
+ * If the position is invalid, returns a reference to an empty step.
+ * 
+ * @param position The step position (0-based)
+ * @return Reference to the step
+ */
 TrackerStep& TrackerChannel::getStep(int position) {
     if (position >= 0 && position < static_cast<int>(steps_.size())) {
         return steps_[position];
@@ -87,6 +138,15 @@ TrackerStep& TrackerChannel::getStep(int position) {
     return emptyStep;
 }
 
+/**
+ * @brief Get a step at a specific position (const version)
+ * 
+ * Returns a const reference to the step at the given position in the channel.
+ * If the position is invalid, returns a reference to an empty step.
+ * 
+ * @param position The step position (0-based)
+ * @return Const reference to the step
+ */
 const TrackerStep& TrackerChannel::getStep(int position) const {
     if (position >= 0 && position < static_cast<int>(steps_.size())) {
         return steps_[position];
@@ -95,18 +155,41 @@ const TrackerStep& TrackerChannel::getStep(int position) const {
     return emptyStep;
 }
 
+/**
+ * @brief Set a step at a specific position
+ * 
+ * Sets the step data at the given position in the channel.
+ * 
+ * @param position The step position (0-based)
+ * @param step The step data to set
+ */
 void TrackerChannel::setStep(int position, const TrackerStep& step) {
     if (position >= 0 && position < static_cast<int>(steps_.size())) {
         steps_[position] = step;
     }
 }
 
+/**
+ * @brief Set the number of steps in the channel
+ * 
+ * Changes the number of steps in the channel and resizes the step array.
+ * 
+ * @param steps The new number of steps
+ */
 void TrackerChannel::setSteps(int steps) {
     stepCount_ = steps;
     steps_.resize(steps);
 }
 
-// TrackerPattern implementation
+/**
+ * @brief Constructor for TrackerPattern
+ * 
+ * Creates a new tracker pattern with the specified number of channels and steps.
+ * A pattern represents a complete musical sequence in the tracker.
+ * 
+ * @param channels Number of channels in the pattern
+ * @param steps Number of steps in each channel
+ */
 TrackerPattern::TrackerPattern(int channels, int steps)
     : channelCount_(channels)
     , stepCount_(steps)
@@ -118,6 +201,15 @@ TrackerPattern::TrackerPattern(int channels, int steps)
     }
 }
 
+/**
+ * @brief Get a channel at a specific index
+ * 
+ * Returns a reference to the channel at the given index in the pattern.
+ * If the index is invalid, returns a reference to an empty channel.
+ * 
+ * @param channel The channel index (0-based)
+ * @return Reference to the channel
+ */
 TrackerChannel& TrackerPattern::getChannel(int channel) {
     if (channel >= 0 && channel < static_cast<int>(channels_.size())) {
         return *channels_[channel];
@@ -126,6 +218,15 @@ TrackerChannel& TrackerPattern::getChannel(int channel) {
     return emptyChannel;
 }
 
+/**
+ * @brief Get a channel at a specific index (const version)
+ * 
+ * Returns a const reference to the channel at the given index in the pattern.
+ * If the index is invalid, returns a reference to an empty channel.
+ * 
+ * @param channel The channel index (0-based)
+ * @return Const reference to the channel
+ */
 const TrackerChannel& TrackerPattern::getChannel(int channel) const {
     if (channel >= 0 && channel < static_cast<int>(channels_.size())) {
         return *channels_[channel];
@@ -134,6 +235,11 @@ const TrackerChannel& TrackerPattern::getChannel(int channel) const {
     return emptyChannel;
 }
 
+/**
+ * @brief Clear all steps in the pattern
+ * 
+ * Resets all steps in all channels to their default (empty) state.
+ */
 void TrackerPattern::clear() {
     for (auto& channel : channels_) {
         for (int i = 0; i < stepCount_; ++i) {
@@ -142,7 +248,14 @@ void TrackerPattern::clear() {
     }
 }
 
-// TrackerWidget implementation
+/**
+ * @brief Constructor for TrackerWidget
+ * 
+ * Creates a new tracker widget with all UI components and initializes
+ * the first pattern. Sets up the playback timer and connects all signals.
+ * 
+ * @param parent Parent widget
+ */
 TrackerWidget::TrackerWidget(QWidget *parent)
     : QWidget(parent)
     , mainLayout_(nullptr)
@@ -170,25 +283,36 @@ TrackerWidget::TrackerWidget(QWidget *parent)
 {
     setupUI();
     
-    // Create initial pattern
     addPattern();
     
-    // Setup playback timer
     playbackTimer_ = new QTimer(this);
     connect(playbackTimer_, &QTimer::timeout, this, &TrackerWidget::onPlaybackTimer);
 }
 
+/**
+ * @brief Destructor for TrackerWidget
+ * 
+ * Cleans up the tracker widget by stopping playback and freeing resources.
+ */
 TrackerWidget::~TrackerWidget() {
     stop();
 }
 
+/**
+ * @brief Setup the tracker user interface
+ * 
+ * Creates and configures all UI components for the tracker widget, including:
+ * - Playback controls (play, pause, stop)
+ * - Tempo controls
+ * - Pattern management controls
+ * - Channel controls (mute, solo)
+ * - Pattern table for editing steps
+ */
 void TrackerWidget::setupUI() {
     mainLayout_ = new QVBoxLayout(this);
     
-    // Controls layout
     controlsLayout_ = new QHBoxLayout();
     
-    // Playback controls
     playButton_ = new QPushButton("Play", this);
     stopButton_ = new QPushButton("Stop", this);
     pauseButton_ = new QPushButton("Pause", this);
@@ -200,7 +324,6 @@ void TrackerWidget::setupUI() {
     connect(stopButton_, &QPushButton::clicked, this, &TrackerWidget::onStopClicked);
     connect(pauseButton_, &QPushButton::clicked, this, &TrackerWidget::onPauseClicked);
     
-    // Tempo controls
     tempoLabel_ = new QLabel("Tempo:", this);
     tempoSlider_ = new QSlider(Qt::Horizontal, this);
     tempoSlider_->setRange(MIN_TEMPO, MAX_TEMPO);
@@ -222,7 +345,6 @@ void TrackerWidget::setupUI() {
     controlsLayout_->addWidget(tempoSpinBox_);
     controlsLayout_->addStretch();
     
-    // Pattern controls
     patternControlsLayout_ = new QHBoxLayout();
     
     patternLabel_ = new QLabel("Pattern:", this);
@@ -243,7 +365,6 @@ void TrackerWidget::setupUI() {
     patternControlsLayout_->addWidget(duplicatePatternButton_);
     patternControlsLayout_->addStretch();
     
-    // Channel controls
     channelControlsGroup_ = new QGroupBox("Channel Controls", this);
     QHBoxLayout *channelControlsLayout = new QHBoxLayout(channelControlsGroup_);
     
@@ -273,20 +394,23 @@ void TrackerWidget::setupUI() {
         channelControlsLayout->addLayout(channelLayout);
     }
     
-    // Pattern table
     setupPatternTable();
     
-    // Add to main layout
     mainLayout_->addLayout(controlsLayout_);
     mainLayout_->addLayout(patternControlsLayout_);
     mainLayout_->addWidget(channelControlsGroup_);
     mainLayout_->addWidget(patternTable_);
 }
 
+/**
+ * @brief Setup the pattern table widget
+ * 
+ * Creates and configures the table widget that displays and allows editing
+ * of tracker steps. Sets up columns for each channel and rows for each step.
+ */
 void TrackerWidget::setupPatternTable() {
     patternTable_ = new QTableWidget(this);
     
-    // Set up table headers
     QStringList headers;
     headers << "Step";
     for (int i = 0; i < DEFAULT_CHANNELS; ++i) {
@@ -295,7 +419,6 @@ void TrackerWidget::setupPatternTable() {
     patternTable_->setColumnCount(headers.size());
     patternTable_->setHorizontalHeaderLabels(headers);
     
-    // Set up rows
     patternTable_->setRowCount(DEFAULT_STEPS);
     for (int i = 0; i < DEFAULT_STEPS; ++i) {
         QTableWidgetItem *stepItem = new QTableWidgetItem(QString::number(i + 1));
@@ -303,23 +426,26 @@ void TrackerWidget::setupPatternTable() {
         patternTable_->setItem(i, 0, stepItem);
     }
     
-    // Configure table
     patternTable_->setAlternatingRowColors(true);
     patternTable_->setSelectionBehavior(QAbstractItemView::SelectItems);
     patternTable_->setSelectionMode(QAbstractItemView::SingleSelection);
     patternTable_->verticalHeader()->setVisible(false);
     patternTable_->horizontalHeader()->setStretchLastSection(true);
     
-    // Connect signals
     connect(patternTable_, &QTableWidget::cellChanged, this, &TrackerWidget::onStepChanged);
     
-    // Set column widths
     patternTable_->setColumnWidth(0, 50); // Step column
     for (int i = 1; i < headers.size(); ++i) {
         patternTable_->setColumnWidth(i, 120); // Channel columns
     }
 }
 
+/**
+ * @brief Update the pattern table display
+ * 
+ * Refreshes the pattern table to show the current pattern data.
+ * Updates all step cells with their current values and colors.
+ */
 void TrackerWidget::updatePatternTable() {
     if (currentPattern_ < 0 || currentPattern_ >= static_cast<int>(patterns_.size())) {
         return;
@@ -339,7 +465,6 @@ void TrackerWidget::updatePatternTable() {
             
             item->setText(trackerStep.toString());
             
-            // Color coding
             if (trackerStep.active) {
                 item->setBackground(QColor(200, 255, 200)); // Light green for active steps
             } else {
@@ -349,13 +474,18 @@ void TrackerWidget::updatePatternTable() {
     }
 }
 
+/**
+ * @brief Update the playback position display
+ * 
+ * Updates the visual indication of the current playback position in the
+ * pattern table. Highlights the current step being played.
+ */
 void TrackerWidget::updatePlaybackPosition() {
     if (!playing_ && !paused_) {
         clearPlaybackPosition();
         return;
     }
     
-    // Highlight current step
     for (int i = 0; i < patternTable_->rowCount(); ++i) {
         for (int j = 0; j < patternTable_->columnCount(); ++j) {
             QTableWidgetItem *item = patternTable_->item(i, j);
@@ -363,7 +493,6 @@ void TrackerWidget::updatePlaybackPosition() {
                 if (i == currentStep_) {
                     item->setBackground(QColor(255, 255, 0)); // Yellow for current step
                 } else {
-                    // Reset to original color
                     if (currentPattern_ < static_cast<int>(patterns_.size())) {
                         TrackerPattern& pattern = *patterns_[currentPattern_];
                         if (j > 0 && j - 1 < pattern.getChannels()) {
@@ -381,6 +510,14 @@ void TrackerWidget::updatePlaybackPosition() {
     }
 }
 
+/**
+ * @brief Trigger a step for playback
+ * 
+ * Processes a single step in the current pattern and triggers any notes
+ * that should be played at that step. Respects mute and solo settings.
+ * 
+ * @param step The step number to trigger
+ */
 void TrackerWidget::triggerStep(int step) {
     if (currentPattern_ < 0 || currentPattern_ >= static_cast<int>(patterns_.size())) {
         return;
@@ -391,12 +528,10 @@ void TrackerWidget::triggerStep(int step) {
     for (int channel = 0; channel < pattern.getChannels(); ++channel) {
         TrackerChannel& trackerChannel = pattern.getChannel(channel);
         
-        // Skip muted channels
         if (trackerChannel.isMuted()) {
             continue;
         }
         
-        // Check for solo - if any channel is solo, only play solo channels
         bool hasSolo = false;
         for (int c = 0; c < pattern.getChannels(); ++c) {
             if (pattern.getChannel(c).isSolo()) {
@@ -416,11 +551,22 @@ void TrackerWidget::triggerStep(int step) {
     }
 }
 
+/**
+ * @brief Clear the playback position display
+ * 
+ * Removes the visual indication of the current playback position
+ * and resets the pattern table colors to their default state.
+ */
 void TrackerWidget::clearPlaybackPosition() {
     updatePatternTable(); // This will reset all colors
 }
 
-// Public methods
+/**
+ * @brief Add a new pattern
+ * 
+ * Creates a new empty pattern and adds it to the pattern list.
+ * Updates the pattern combo box and sets the new pattern as current.
+ */
 void TrackerWidget::addPattern() {
     auto pattern = std::make_unique<TrackerPattern>(DEFAULT_CHANNELS, DEFAULT_STEPS);
     pattern->setName(QString("Pattern %1").arg(patterns_.size() + 1));
@@ -430,6 +576,14 @@ void TrackerWidget::addPattern() {
     patternCombo_->setCurrentIndex(patterns_.size() - 1);
 }
 
+/**
+ * @brief Remove a pattern
+ * 
+ * Removes the pattern at the specified index from the pattern list.
+ * Prevents removing the last remaining pattern.
+ * 
+ * @param index The index of the pattern to remove
+ */
 void TrackerWidget::removePattern(int index) {
     if (index < 0 || index >= static_cast<int>(patterns_.size()) || patterns_.size() <= 1) {
         return; // Don't remove the last pattern
@@ -446,6 +600,14 @@ void TrackerWidget::removePattern(int index) {
     updatePatternTable();
 }
 
+/**
+ * @brief Duplicate a pattern
+ * 
+ * Creates a copy of the pattern at the specified index and adds it
+ * to the pattern list. The new pattern is added at the end.
+ * 
+ * @param index The index of the pattern to duplicate
+ */
 void TrackerWidget::duplicatePattern(int index) {
     if (index < 0 || index >= static_cast<int>(patterns_.size())) {
         return;
@@ -454,7 +616,6 @@ void TrackerWidget::duplicatePattern(int index) {
     auto newPattern = std::make_unique<TrackerPattern>(DEFAULT_CHANNELS, DEFAULT_STEPS);
     newPattern->setName(QString("Pattern %1").arg(patterns_.size() + 1));
     
-    // Copy data from source pattern
     TrackerPattern& sourcePattern = *patterns_[index];
     for (int channel = 0; channel < sourcePattern.getChannels(); ++channel) {
         for (int step = 0; step < sourcePattern.getSteps(); ++step) {
@@ -466,6 +627,13 @@ void TrackerWidget::duplicatePattern(int index) {
     patternCombo_->addItem(QString("Pattern %1").arg(patterns_.size()));
 }
 
+/**
+ * @brief Set the current pattern
+ * 
+ * Changes the currently active pattern and updates the display.
+ * 
+ * @param index The index of the pattern to set as current
+ */
 void TrackerWidget::setCurrentPattern(int index) {
     if (index >= 0 && index < static_cast<int>(patterns_.size())) {
         currentPattern_ = index;
@@ -474,6 +642,12 @@ void TrackerWidget::setCurrentPattern(int index) {
     }
 }
 
+/**
+ * @brief Start playback
+ * 
+ * Starts playing the current pattern from the beginning. Sets up the
+ * playback timer and updates the UI state.
+ */
 void TrackerWidget::play() {
     if (playing_) {
         return;
@@ -486,13 +660,18 @@ void TrackerWidget::play() {
     playButton_->setChecked(true);
     pauseButton_->setChecked(false);
     
-    // Calculate timer interval based on tempo
     int interval = 60000 / (tempo_ * 4); // 16th notes
     playbackTimer_->start(interval);
     
     updatePlaybackPosition();
 }
 
+/**
+ * @brief Stop playback
+ * 
+ * Stops the current playback and resets the position to the beginning.
+ * Updates the UI state and clears the playback position display.
+ */
 void TrackerWidget::stop() {
     playing_ = false;
     paused_ = false;
@@ -506,6 +685,12 @@ void TrackerWidget::stop() {
     clearPlaybackPosition();
 }
 
+/**
+ * @brief Pause or resume playback
+ * 
+ * Toggles the pause state of the current playback. If playing, pauses;
+ * if paused, resumes from the current position.
+ */
 void TrackerWidget::pause() {
     if (!playing_) {
         return;
@@ -523,12 +708,19 @@ void TrackerWidget::pause() {
     }
 }
 
+/**
+ * @brief Set the playback tempo
+ * 
+ * Changes the playback tempo in beats per minute and updates the
+ * playback timer interval accordingly.
+ * 
+ * @param bpm The new tempo in beats per minute
+ */
 void TrackerWidget::setTempo(int bpm) {
     tempo_ = qBound(MIN_TEMPO, bpm, MAX_TEMPO);
     tempoSlider_->setValue(tempo_);
     tempoSpinBox_->setValue(tempo_);
     
-    // Update timer if playing
     if (playing_ && !paused_) {
         int interval = 60000 / (tempo_ * 4);
         playbackTimer_->start(interval);
@@ -537,17 +729,35 @@ void TrackerWidget::setTempo(int bpm) {
     emit tempoChanged(tempo_);
 }
 
+/**
+ * @brief Set the number of steps in patterns
+ * 
+ * Changes the number of steps in all patterns. This is a placeholder
+ * for future functionality.
+ * 
+ * @param steps The new number of steps
+ */
 void TrackerWidget::setPatternSteps(int steps) {
-    // This would require resizing all patterns - implementation left for later
     Q_UNUSED(steps);
 }
 
+/**
+ * @brief Set the number of channels in patterns
+ * 
+ * Changes the number of channels in all patterns. This is a placeholder
+ * for future functionality.
+ * 
+ * @param channels The new number of channels
+ */
 void TrackerWidget::setPatternChannels(int channels) {
-    // This would require resizing all patterns - implementation left for later
     Q_UNUSED(channels);
 }
 
-// Private slots
+/**
+ * @brief Handle play button clicks
+ * 
+ * Called when the play button is clicked. Toggles between play and pause states.
+ */
 void TrackerWidget::onPlayClicked() {
     if (playing_) {
         pause();
@@ -589,7 +799,6 @@ void TrackerWidget::onStepChanged(int row, int column) {
     TrackerPattern& pattern = *patterns_[currentPattern_];
     pattern.getChannel(channel).setStep(row, step);
     
-    // Update display
     if (step.active) {
         item->setBackground(QColor(200, 255, 200));
     } else {
@@ -609,15 +818,19 @@ void TrackerWidget::onChannelSoloToggled(int channel, bool solo) {
     }
 }
 
+/**
+ * @brief Handle playback timer events
+ * 
+ * Called periodically by the playback timer to advance the playback position
+ * and trigger the current step. This is the main playback loop.
+ */
 void TrackerWidget::onPlaybackTimer() {
     if (!playing_ || paused_) {
         return;
     }
     
-    // Trigger current step
     triggerStep(currentStep_);
     
-    // Move to next step
     currentStep_++;
     if (currentPattern_ < static_cast<int>(patterns_.size())) {
         TrackerPattern& pattern = *patterns_[currentPattern_];

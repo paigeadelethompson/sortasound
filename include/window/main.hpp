@@ -1,3 +1,21 @@
+/*
+ * SortaSound - Advanced FM Synthesizer
+ * Copyright (C) 2024  Paige Thompson <paige@paige.bio>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <QMainWindow>
@@ -19,9 +37,9 @@
 #include <set>
 #include <vector>
 
-#include "../presets.hpp"
+#include "../fm/presets.hpp"
 #include "../widget/keyboard.hpp"
-#include "../fm.hpp"
+#include "../fm/fm.hpp"
 #include "tracker.hpp"
 
 class MainWindow : public QMainWindow
@@ -56,7 +74,6 @@ private slots:
     void onKeyboardKeyPressed(int note);
     void onKeyboardKeyReleased(int note);
     
-    // Tab-based synthesizer management methods
     void onSynthesizerTabCloseRequested(int index);
     void onAddSynthesizerTab();
     void onSynthesizerTabChanged(int index);
@@ -72,10 +89,8 @@ private:
     void noteOn(int note);
     void noteOff(int note);
     void allNotesOff();
-    // updateSynthesizerSelector removed - using tab-based system
     toybasic::FMSynthesizer* getCurrentSynthesizer();
 
-    // UI Components
     QWidget *centralWidget_;
     QVBoxLayout *mainLayout_;
     QHBoxLayout *controlsLayout_;
@@ -83,25 +98,19 @@ private:
     QTabWidget *synthesizerTabWidget_;
     
     
-    // FM Synthesizer instances
     std::vector<std::unique_ptr<toybasic::FMSynthesizer>> synthesizers_;
     int currentSynthesizerIndex_;
     
-    // Preset Manager
     std::unique_ptr<toybasic::PresetManager> presetManager_;
     
-    // Keyboard Widget
     KeyboardWidget *keyboardWidget_;
     
-    // Tracker Widget
     TrackerWidget *trackerWidget_;
     
-    // Octave selector
     QGroupBox *octaveGroup_;
     QSpinBox *octaveSpinBox_;
     QLabel *octaveLabel_;
     
-    // Control Widgets
     QGroupBox *volumeGroup_;
     QSlider *volumeSlider_;
     QLabel *volumeLabel_;
@@ -117,11 +126,9 @@ private:
     QSlider *distortionSlider_;
     QLabel *distortionLabel_;
     
-    // Advanced controls
     QGroupBox *algorithmGroup_;
     QComboBox *algorithmCombo_;
     
-    // Internals tab controls
     QSpinBox *audioBitsSpinBox_;
     QSpinBox *audioMaxSpinBox_;
     QSpinBox *audioMinSpinBox_;
@@ -140,7 +147,6 @@ private:
     QDoubleSpinBox *minAmplitudeSpinBox_;
     QDoubleSpinBox *maxAmplitudeSpinBox_;
     
-    // Old operator and modulation groups removed - now using tabs
     QSlider *pitchBendSlider_;
     QSlider *modWheelSlider_;
     QLabel *pitchBendLabel_;
@@ -149,15 +155,10 @@ private:
     QGroupBox *channelGroup_;
     QComboBox *channelCombo_;
     
-    // Synthesizer management
-    // Synthesizer management moved to tab-based system
-    
-    // Keyboard mapping
     std::map<Qt::Key, int> keyToNoteMap_;
     std::set<int> activeNotes_;
     int currentChannel_;
     
-    // Constants for keyboard layout
-    static constexpr int OCTAVE_START = 60; // Middle C (C4)
+    static constexpr int OCTAVE_START = 60;
     static constexpr int NOTES_PER_OCTAVE = 12;
 };

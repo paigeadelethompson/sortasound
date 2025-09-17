@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(FMSynthesizer VERSION 1.0.0 LANGUAGES CXX)
+project(SortaSound VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,9 +26,9 @@ set(SOURCES
     src/window/internals.cpp
     src/widget/keyboard.cpp
     src/window/tracker.cpp
-    src/fm.cpp
-    src/algorithms.cpp
-    src/presets.cpp
+    src/fm/fm.cpp
+    src/fm/algorithms.cpp
+    src/fm/presets.cpp
 )
 
 # Header files
@@ -36,15 +36,15 @@ set(HEADERS
     include/window/main.hpp
     include/widget/keyboard.hpp
     include/window/tracker.hpp
-    include/fm.hpp
-    include/presets.hpp
+    include/fm/fm.hpp
+    include/fm/presets.hpp
 )
 
 # Create executable
-add_executable(FMSynthesizer ${SOURCES} ${HEADERS})
+add_executable(SortaSound ${SOURCES} ${HEADERS})
 
 # Link Qt6 libraries
-target_link_libraries(FMSynthesizer
+target_link_libraries(SortaSound
     Qt6::Core
     Qt6::Widgets
     Qt6::Multimedia

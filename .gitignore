@@ -58,7 +58,7 @@ ui_*.h
 *.exe
 *.out
 *.app
-FMSynthesizer
+SortaSound
 
 # IDE files
 .vscode/

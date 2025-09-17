@@ -1,3 +1,21 @@
+/*
+ * SortaSound - Advanced FM Synthesizer
+ * Copyright (C) 2024  Paige Thompson <paige@paige.bio>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <QWidget>
@@ -20,55 +38,41 @@
 class TrackerPattern;
 class TrackerStep;
 class TrackerChannel;
-
-// Represents a single step in a tracker pattern
 class TrackerStep {
 public:
     TrackerStep();
     
-    // Note data (0-127, 0 = no note)
     int note;
     
-    // Instrument/patch number
     int instrument;
     
-    // Volume (0-127)
     int volume;
     
-    // Effects
     int effect1;
     int effect2;
     int effect3;
     
-    // Whether this step is active
     bool active;
     
-    // Convert to string for display
     QString toString() const;
     
-    // Parse from string
     void fromString(const QString& str);
 };
 
-// Represents a channel in a tracker pattern
 class TrackerChannel {
 public:
     TrackerChannel(int steps = 64);
     
-    // Get/set step at position
     TrackerStep& getStep(int position);
     const TrackerStep& getStep(int position) const;
     void setStep(int position, const TrackerStep& step);
     
-    // Channel properties
     int getSteps() const { return stepCount_; }
     void setSteps(int steps);
     
-    // Channel name
     QString getName() const { return name_; }
     void setName(const QString& name) { name_ = name; }
     
-    // Mute/solo
     bool isMuted() const { return muted_; }
     void setMuted(bool muted) { muted_ = muted; }
     
@@ -83,24 +87,19 @@ private:
     bool solo_;
 };
 
-// Represents a complete pattern
 class TrackerPattern {
 public:
     TrackerPattern(int channels = 8, int steps = 64);
     
-    // Get/set channel
     TrackerChannel& getChannel(int channel);
     const TrackerChannel& getChannel(int channel) const;
     
-    // Pattern properties
     int getChannels() const { return channelCount_; }
     int getSteps() const { return stepCount_; }
     
-    // Pattern name
     QString getName() const { return name_; }
     void setName(const QString& name) { name_ = name; }
     
-    // Clear pattern
     void clear();
     
 private:
@@ -110,7 +109,6 @@ private:
     QString name_;
 };
 
-// Main tracker widget
 class TrackerWidget : public QWidget {
     Q_OBJECT
 
@@ -118,24 +116,20 @@ public:
     explicit TrackerWidget(QWidget *parent = nullptr);
     ~TrackerWidget();
     
-    // Pattern management
     void addPattern();
     void removePattern(int index);
     void duplicatePattern(int index);
     void setCurrentPattern(int index);
     int getCurrentPattern() const { return currentPattern_; }
     
-    // Playback control
     void play();
     void stop();
     void pause();
     bool isPlaying() const { return playing_; }
     
-    // Tempo control
     void setTempo(int bpm);
     int getTempo() const { return tempo_; }
     
-    // Pattern properties
     void setPatternSteps(int steps);
     void setPatternChannels(int channels);
     
@@ -163,12 +157,10 @@ private:
     void triggerStep(int step);
     void clearPlaybackPosition();
     
-    // UI Components
     QVBoxLayout *mainLayout_;
     QHBoxLayout *controlsLayout_;
     QHBoxLayout *patternControlsLayout_;
     
-    // Playback controls
     QPushButton *playButton_;
     QPushButton *stopButton_;
     QPushButton *pauseButton_;
@@ -176,22 +168,18 @@ private:
     QSlider *tempoSlider_;
     QSpinBox *tempoSpinBox_;
     
-    // Pattern controls
     QLabel *patternLabel_;
     QComboBox *patternCombo_;
     QPushButton *addPatternButton_;
     QPushButton *removePatternButton_;
     QPushButton *duplicatePatternButton_;
     
-    // Pattern table
     QTableWidget *patternTable_;
     
-    // Channel controls
     QGroupBox *channelControlsGroup_;
     std::vector<QCheckBox*> channelMuteCheckboxes_;
     std::vector<QCheckBox*> channelSoloCheckboxes_;
     
-    // Data
     std::vector<std::unique_ptr<TrackerPattern>> patterns_;
     int currentPattern_;
     int currentStep_;
@@ -199,10 +187,8 @@ private:
     bool paused_;
     int tempo_;
     
-    // Playback timer
     QTimer *playbackTimer_;
     
-    // Constants
     static constexpr int DEFAULT_TEMPO = 120;
     static constexpr int DEFAULT_CHANNELS = 8;
     static constexpr int DEFAULT_STEPS = 64;

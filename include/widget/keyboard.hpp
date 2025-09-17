@@ -55,18 +55,15 @@ private:
     Qt::Alignment alignment_;
     int currentOctave_;
     
-    // Visual constants
     static constexpr int KEY_HEIGHT = 100;
     static constexpr int BLACK_KEY_HEIGHT = 60;
     
-    // Colors
     static const QColor WHITE_KEY_COLOR;
     static const QColor BLACK_KEY_COLOR;
     static const QColor ACTIVE_KEY_COLOR;
     static const QColor KEY_BORDER_COLOR;
     
-    // Constants
-    static constexpr int KEYS_PER_OCTAVE = 12; // 12 keys per octave
+    static constexpr int KEYS_PER_OCTAVE = 12;
     static constexpr int WHITE_KEYS_PER_OCTAVE = 7;
     static constexpr int BLACK_KEYS_PER_OCTAVE = 5;
     static constexpr int OCTAVES_DISPLAYED = 4; // Always show 4 octaves

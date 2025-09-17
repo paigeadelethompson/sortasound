@@ -1,3 +1,21 @@
+/*
+ * SortaSound - Advanced FM Synthesizer
+ * Copyright (C) 2024  Paige Thompson <paige@paige.bio>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "widget/keyboard.hpp"
 #include <QPainter>
 #include <QMouseEvent>
@@ -5,87 +23,121 @@
 #include <QApplication>
 #include <algorithm>
 
-// Static color definitions
 const QColor KeyboardWidget::WHITE_KEY_COLOR = QColor(255, 255, 255);
 const QColor KeyboardWidget::BLACK_KEY_COLOR = QColor(64, 64, 64);
 const QColor KeyboardWidget::ACTIVE_KEY_COLOR = QColor(255, 200, 100);
 const QColor KeyboardWidget::KEY_BORDER_COLOR = QColor(128, 128, 128);
 
+/**
+ * @brief Constructor for KeyboardWidget
+ * 
+ * Creates a new keyboard widget with default settings. The keyboard displays
+ * 4 octaves starting from the current octave, with proper key layout and
+ * visual feedback for active notes.
+ * 
+ * @param parent Parent widget
+ */
 KeyboardWidget::KeyboardWidget(QWidget *parent)
     : QWidget(parent)
     , alignment_(Qt::AlignLeft)
-    , currentOctave_(2) // Start at C2
+    , currentOctave_(2)
 {
     setMinimumHeight(KEY_HEIGHT);
     setMaximumHeight(KEY_HEIGHT);
-    setFocusPolicy(Qt::NoFocus); // Don't capture keyboard focus
-    setAttribute(Qt::WA_NoMouseReplay); // Don't replay mouse events
-    setAttribute(Qt::WA_TransparentForMouseEvents, false); // Allow mouse events for clicking
+    setFocusPolicy(Qt::NoFocus);
+    setAttribute(Qt::WA_NoMouseReplay);
+    setAttribute(Qt::WA_TransparentForMouseEvents, false);
     setupKeys();
 }
 
+/**
+ * @brief Set the currently active notes
+ * 
+ * Updates the visual state of the keyboard to show which notes are currently
+ * being played. This affects the color and highlighting of the corresponding keys.
+ * 
+ * @param notes Set of MIDI note numbers that are currently active
+ */
 void KeyboardWidget::setActiveNotes(const std::set<int>& notes)
 {
-    // Only update if the notes actually changed
     if (activeNotes_ != notes) {
         activeNotes_ = notes;
-        qDebug() << "KeyboardWidget::setActiveNotes called with" << notes.size() << "notes";
         update();
     }
 }
 
+/**
+ * @brief Set the keyboard key mapping
+ * 
+ * Configures which computer keyboard keys correspond to which MIDI notes.
+ * This allows the user to play the synthesizer using their computer keyboard.
+ * 
+ * @param keyMap Map from Qt key codes to MIDI note numbers
+ */
 void KeyboardWidget::setKeyMapping(const std::map<Qt::Key, int>& keyMap)
 {
     keyToNoteMap_ = keyMap;
     setupKeys();
 }
 
+/**
+ * @brief Set the keyboard alignment
+ * 
+ * Controls how the keyboard is positioned within the widget. This affects
+ * the layout and positioning of the keys.
+ * 
+ * @param alignment Qt alignment flags for keyboard positioning
+ */
 void KeyboardWidget::setAlignment(Qt::Alignment alignment)
 {
     alignment_ = alignment;
     setupKeys();
 }
 
+/**
+ * @brief Set the current octave for the keyboard
+ * 
+ * Changes the octave range displayed on the keyboard. The keyboard shows
+ * 4 octaves starting from the specified octave. This also clears any
+ * currently pressed notes.
+ * 
+ * @param octave The starting octave (0-8, clamped to valid range)
+ */
 void KeyboardWidget::setCurrentOctave(int octave)
 {
     currentOctave_ = qBound(MIN_OCTAVE, octave, MAX_OCTAVE);
-    pressedNotes_.clear(); // Clear pressed notes when octave changes
-    qDebug() << "KeyboardWidget::setCurrentOctave - octave:" << currentOctave_ << "showing octaves C" << currentOctave_ << " to C" << (currentOctave_ + 3);
+    pressedNotes_.clear();
     setupKeys();
-    update(); // Force repaint after octave change
+    update();
 }
 
+/**
+ * @brief Setup the keyboard key layout
+ * 
+ * Calculates and positions all the keys on the keyboard based on the current
+ * octave and widget size. This includes determining key sizes, positions,
+ * and the proper layout for white and black keys.
+ */
 void KeyboardWidget::setupKeys()
 {
     keys_.clear();
     
-    // Calculate available width and key dimensions for 4 octaves
-    int availableWidth = width(); // Use full width, no margins
-    int totalWhiteKeys = OCTAVES_DISPLAYED * WHITE_KEYS_PER_OCTAVE; // 4 octaves * 7 white keys = 28 white keys
+    int availableWidth = width();
+    int totalWhiteKeys = OCTAVES_DISPLAYED * WHITE_KEYS_PER_OCTAVE;
     
-    qDebug() << "KeyboardWidget::setupKeys - Widget size:" << size() << "availableWidth:" << availableWidth;
+    int whiteKeyWidth = availableWidth / totalWhiteKeys;
+    int blackKeyWidth = qMax(3, static_cast<int>(whiteKeyWidth * 0.6));
     
-    // Use full available width for keys to eliminate right padding
-    int whiteKeyWidth = availableWidth / totalWhiteKeys; // Use exact division to fill full width
-    int blackKeyWidth = qMax(3, static_cast<int>(whiteKeyWidth * 0.6)); // Minimum 3px for black keys
-    
-    // Calculate remaining width to distribute to the last few keys
     int totalKeyWidth = totalWhiteKeys * whiteKeyWidth;
     int remainingWidth = availableWidth - totalKeyWidth;
     
-    qDebug() << "KeyboardWidget::setupKeys - availableWidth:" << availableWidth << "whiteKeyWidth:" << whiteKeyWidth;
-    
-    // Always start at left edge to eliminate padding
     int startX = 0;
     
-    // Define the pattern of white and black keys in an octave
-    std::vector<bool> octavePattern = {false, true, false, true, false, false, true, false, true, false, true, false}; // C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+    std::vector<bool> octavePattern = {false, true, false, true, false, false, true, false, true, false, true, false};
     
     int x = startX;
-    int note = currentOctave_ * 12; // Calculate starting note for current octave (C0=0, C1=12, C2=24, etc.)
-    int whiteKeyCount = 0; // Track white key count for width distribution
-    
-    // Create keys for 4 octaves
+    int note = currentOctave_ * 12;
+    int whiteKeyCount = 0;
     for (int octave = 0; octave < OCTAVES_DISPLAYED; octave++) {
         for (int i = 0; i < KEYS_PER_OCTAVE; i++) {
             KeyInfo key;
@@ -94,13 +146,11 @@ void KeyboardWidget::setupKeys()
             key.isActive = false;
             
             if (key.isBlack) {
-                // Position black keys between white keys
                 key.rect = QRect(x - blackKeyWidth/2, 0, blackKeyWidth, BLACK_KEY_HEIGHT);
             } else {
-                // White keys - distribute remaining width to the last few keys
                 int currentWhiteKeyWidth = whiteKeyWidth;
                 if (whiteKeyCount >= totalWhiteKeys - remainingWidth) {
-                    currentWhiteKeyWidth += 1; // Add 1 pixel to the last few keys
+                    currentWhiteKeyWidth += 1;
                 }
                 
                 key.rect = QRect(x, 0, currentWhiteKeyWidth, KEY_HEIGHT);
@@ -113,37 +163,47 @@ void KeyboardWidget::setupKeys()
         }
     }
     
-    qDebug() << "KeyboardWidget::setupKeys - Created" << keys_.size() << "keys, showing octaves C" << currentOctave_ << " to C" << (currentOctave_ + 3) << " (notes" << keys_[0].note << "to" << keys_.back().note << ")";
-    
-    // Debug: Check if keys have valid rectangles
-    for (size_t i = 0; i < keys_.size(); i += 12) { // Check every 12th key (one per octave)
-        if (i < keys_.size()) {
-            qDebug() << "Key" << i << "note:" << keys_[i].note << "rect:" << keys_[i].rect << "isBlack:" << keys_[i].isBlack;
-        }
-    }
-    
-    // Update active states
     updateActiveStates();
 }
 
+/**
+ * @brief Handle widget resize events
+ * 
+ * Called when the widget is resized. Recalculates the key layout to fit
+ * the new widget dimensions and updates the display.
+ * 
+ * @param event The resize event
+ */
 void KeyboardWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
-    qDebug() << "KeyboardWidget::resizeEvent - new size:" << event->size();
-    setupKeys(); // Recalculate key positions when window is resized
-    update(); // Force immediate repaint
+    setupKeys();
+    update();
 }
 
+/**
+ * @brief Update the active state of all keys
+ * 
+ * Updates the visual state of each key based on whether it corresponds to
+ * an active note or is currently being pressed by the user.
+ */
 void KeyboardWidget::updateActiveStates()
 {
     for (auto& key : keys_) {
-        // A key is active if it's either in activeNotes_ (from synthesizer) or pressedNotes_ (from mouse)
         key.isActive = (activeNotes_.find(key.note) != activeNotes_.end()) || 
                       (pressedNotes_.find(key.note) != pressedNotes_.end());
     }
 }
 
 
+/**
+ * @brief Handle widget paint events
+ * 
+ * Renders the keyboard widget, including all keys, their colors, and
+ * any visual feedback for active notes. Also draws note labels on white keys.
+ * 
+ * @param event The paint event
+ */
 void KeyboardWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
@@ -151,24 +211,19 @@ void KeyboardWidget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
-    // Update active states
     updateActiveStates();
     
-    // Draw white keys first
     for (const auto& key : keys_) {
         if (!key.isBlack) {
             drawKey(painter, key);
         }
     }
     
-    // Draw black keys on top
     for (const auto& key : keys_) {
         if (key.isBlack) {
             drawKey(painter, key);
         }
     }
-    
-    // Draw note labels for white keys (only show C notes to avoid clutter)
     painter.setPen(Qt::black);
     painter.setFont(QFont("Arial", 7));
     
@@ -178,15 +233,13 @@ void KeyboardWidget::paintEvent(QPaintEvent *event)
     
     for (const auto& key : keys_) {
         if (!key.isBlack) {
-            // Only show C notes to avoid clutter
-            if (noteIndex % 7 == 0) { // C notes are at positions 0, 7, 14, 21
+            if (noteIndex % 7 == 0) {
                 QString noteText = QString("C%1").arg(currentOctaveForLabel);
                 QRect textRect = key.rect.adjusted(0, KEY_HEIGHT - 15, 0, -5);
                 painter.drawText(textRect, Qt::AlignCenter, noteText);
             }
             
             noteIndex++;
-            // Move to next octave after 7 white keys
             if (noteIndex % 7 == 0) {
                 currentOctaveForLabel++;
             }
@@ -194,6 +247,15 @@ void KeyboardWidget::paintEvent(QPaintEvent *event)
     }
 }
 
+/**
+ * @brief Draw a single key on the keyboard
+ * 
+ * Renders an individual key with appropriate colors, borders, and visual
+ * effects based on its state (active, pressed, etc.).
+ * 
+ * @param painter The QPainter object for drawing
+ * @param key The key information to draw
+ */
 void KeyboardWidget::drawKey(QPainter& painter, const KeyInfo& key)
 {
     QColor fillColor = key.isBlack ? BLACK_KEY_COLOR : WHITE_KEY_COLOR;
@@ -206,7 +268,6 @@ void KeyboardWidget::drawKey(QPainter& painter, const KeyInfo& key)
     painter.setPen(QPen(KEY_BORDER_COLOR, 1));
     painter.drawRect(key.rect);
     
-    // Add a subtle highlight for active keys
     if (key.isActive) {
         painter.setBrush(QColor(255, 255, 255, 50));
         painter.setPen(Qt::NoPen);
@@ -214,39 +275,58 @@ void KeyboardWidget::drawKey(QPainter& painter, const KeyInfo& key)
     }
 }
 
+/**
+ * @brief Handle mouse press events
+ * 
+ * Called when the user presses the mouse button on the keyboard. Determines
+ * which key was pressed and emits the appropriate signal.
+ * 
+ * @param event The mouse press event
+ */
 void KeyboardWidget::mousePressEvent(QMouseEvent *event)
 {
     KeyInfo* key = getKeyAt(event->pos());
     if (key) {
-        qDebug() << "KeyboardWidget::mousePressEvent - Key pressed, note:" << key->note;
-        pressedNotes_.insert(key->note); // Track pressed note
-        updateActiveStates(); // Update visual state
-        update(); // Force repaint
+        pressedNotes_.insert(key->note);
+        updateActiveStates();
+        update();
         emit keyPressed(key->note);
-    } else {
-        qDebug() << "KeyboardWidget::mousePressEvent - No key found at position:" << event->pos();
     }
 }
 
+/**
+ * @brief Handle mouse release events
+ * 
+ * Called when the user releases the mouse button on the keyboard. Determines
+ * which key was released and emits the appropriate signal.
+ * 
+ * @param event The mouse release event
+ */
 void KeyboardWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     KeyInfo* key = getKeyAt(event->pos());
     if (key) {
-        qDebug() << "KeyboardWidget::mouseReleaseEvent - Key released, note:" << key->note;
-        pressedNotes_.erase(key->note); // Remove from pressed notes
-        updateActiveStates(); // Update visual state
-        update(); // Force repaint
+        pressedNotes_.erase(key->note);
+        updateActiveStates();
+        update();
         emit keyReleased(key->note);
     }
 }
 
+/**
+ * @brief Handle mouse move events
+ * 
+ * Called when the mouse moves over the keyboard. Handles dragging behavior
+ * where the user can drag to play multiple keys or release all keys when
+ * dragging outside the keyboard area.
+ * 
+ * @param event The mouse move event
+ */
 void KeyboardWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    // Handle mouse drag - if mouse is pressed and moves outside a key, release it
     if (event->buttons() & Qt::LeftButton) {
         KeyInfo* key = getKeyAt(event->pos());
         if (!key) {
-            // Mouse moved outside any key, release all pressed notes
             if (!pressedNotes_.empty()) {
                 for (int note : pressedNotes_) {
                     emit keyReleased(note);
@@ -259,26 +339,47 @@ void KeyboardWidget::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
+/**
+ * @brief Handle keyboard key press events
+ * 
+ * Called when a key on the computer keyboard is pressed. This is used for
+ * computer keyboard input to play notes on the synthesizer.
+ * 
+ * @param event The key press event
+ */
 void KeyboardWidget::keyPressEvent(QKeyEvent *event)
 {
-    qDebug() << "KeyboardWidget::keyPressEvent - key:" << event->key() << "passing to parent";
-    QWidget::keyPressEvent(event); // Pass to parent (MainWindow)
+    QWidget::keyPressEvent(event);
 }
 
+/**
+ * @brief Handle keyboard key release events
+ * 
+ * Called when a key on the computer keyboard is released. This is used for
+ * computer keyboard input to stop playing notes on the synthesizer.
+ * 
+ * @param event The key release event
+ */
 void KeyboardWidget::keyReleaseEvent(QKeyEvent *event)
 {
-    qDebug() << "KeyboardWidget::keyReleaseEvent - key:" << event->key() << "passing to parent";
-    QWidget::keyReleaseEvent(event); // Pass to parent (MainWindow)
+    QWidget::keyReleaseEvent(event);
 }
 
+/**
+ * @brief Get the key at a specific position
+ * 
+ * Finds and returns the key information for the key at the given position.
+ * This is used for mouse interaction to determine which key was clicked.
+ * 
+ * @param pos The position to check
+ * @return Pointer to the key information, or nullptr if no key at that position
+ */
 KeyboardWidget::KeyInfo* KeyboardWidget::getKeyAt(const QPoint& pos)
 {
     for (auto& key : keys_) {
         if (key.rect.contains(pos)) {
-            qDebug() << "KeyboardWidget::getKeyAt - Found key at pos:" << pos << "note:" << key.note << "rect:" << key.rect;
             return &key;
         }
     }
-    qDebug() << "KeyboardWidget::getKeyAt - No key found at pos:" << pos << "total keys:" << keys_.size();
     return nullptr;
 }
