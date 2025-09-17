@@ -1,4 +1,4 @@
-#include "mainwindow.hpp"
+#include "window/main.hpp"
 #include <QApplication>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -58,10 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     , modWheelLabel_(nullptr)
     , channelGroup_(nullptr)
     , channelCombo_(nullptr)
-    , synthManagerGroup_(nullptr)
-    , synthSelector_(nullptr)
-    , addSynthButton_(nullptr)
-    , removeSynthButton_(nullptr)
+    , synthesizerTabWidget_(nullptr)
     , currentChannel_(0)
 {
     setupUI();
@@ -94,25 +91,129 @@ void MainWindow::setupKeyboardMapping()
 
 void MainWindow::onKeyboardKeyPressed(int note)
 {
+    qDebug() << "MainWindow::onKeyboardKeyPressed - note:" << note << "synthesizerIndex:" << currentSynthesizerIndex_;
     // Handle keyboard widget key press
     if (currentSynthesizerIndex_ < synthesizers_.size()) {
-        synthesizers_[currentSynthesizerIndex_]->noteOn(note, 100); // Default velocity 100
+        qDebug() << "MainWindow::onKeyboardKeyPressed - Calling noteOn for note:" << note;
+        synthesizers_[currentSynthesizerIndex_]->noteOn(note, 1.0); // Default velocity 1.0 (max)
+    } else {
+        qDebug() << "MainWindow::onKeyboardKeyPressed - No synthesizer available, size:" << synthesizers_.size();
     }
 }
 
 void MainWindow::onKeyboardKeyReleased(int note)
 {
+    qDebug() << "MainWindow::onKeyboardKeyReleased - note:" << note;
     // Handle keyboard widget key release
     if (currentSynthesizerIndex_ < synthesizers_.size()) {
         synthesizers_[currentSynthesizerIndex_]->noteOff(note);
     }
 }
 
+void MainWindow::onSynthesizerTabCloseRequested(int index)
+{
+    qDebug() << "MainWindow::onSynthesizerTabCloseRequested - index:" << index;
+    
+    // Don't allow closing the last synthesizer tab
+    if (synthesizerTabWidget_->count() <= 1) {
+        return;
+    }
+    
+    // Remove the synthesizer from the vector
+    if (index < synthesizers_.size()) {
+        synthesizers_.erase(synthesizers_.begin() + index);
+    }
+    
+    // Remove the tab
+    synthesizerTabWidget_->removeTab(index);
+    
+    // Update current synthesizer index if necessary
+    if (currentSynthesizerIndex_ >= synthesizers_.size()) {
+        currentSynthesizerIndex_ = synthesizers_.size() - 1;
+    }
+    
+    // Update tab labels
+    updateSynthesizerTabLabels();
+}
+
+void MainWindow::onAddSynthesizerTab()
+{
+    qDebug() << "MainWindow::onAddSynthesizerTab";
+    
+    // Create new synthesizer
+    auto newSynthesizer = std::make_unique<toybasic::FMSynthesizer>();
+    synthesizers_.push_back(std::move(newSynthesizer));
+    
+    // Create new synthesizer tab content (duplicate of the first tab)
+    QWidget *newSynthTab = createSynthesizerTab();
+    
+    // Add the new tab
+    int newIndex = synthesizerTabWidget_->count();
+    synthesizerTabWidget_->addTab(newSynthTab, QString("Synth %1").arg(newIndex + 1));
+    
+    // Switch to the new tab
+    synthesizerTabWidget_->setCurrentIndex(newIndex);
+    
+    // Update current synthesizer index
+    currentSynthesizerIndex_ = newIndex;
+    
+    // Update tab labels
+    updateSynthesizerTabLabels();
+}
+
+void MainWindow::onSynthesizerTabChanged(int index)
+{
+    qDebug() << "MainWindow::onSynthesizerTabChanged - index:" << index;
+    currentSynthesizerIndex_ = index;
+}
+
+QWidget* MainWindow::createSynthesizerTab()
+{
+    // Create a new synthesizer tab with the same content as the original
+    QWidget *newTab = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout(newTab);
+    
+    // Add keyboard widget (shared)
+    layout->addWidget(keyboardWidget_);
+    
+    // Add controls layout (shared)
+    layout->addLayout(controlsLayout_);
+    
+    // Add advanced tab widget (shared)
+    QTabWidget *advancedTabWidget = new QTabWidget();
+    // Note: This is a simplified version - in a full implementation,
+    // you'd want to create separate instances of the advanced controls
+    layout->addWidget(advancedTabWidget);
+    
+    return newTab;
+}
+
+void MainWindow::updateSynthesizerTabLabels()
+{
+    for (int i = 0; i < synthesizerTabWidget_->count(); ++i) {
+        synthesizerTabWidget_->setTabText(i, QString("Synth %1").arg(i + 1));
+    }
+}
+
+void MainWindow::onOctaveChanged(int octave)
+{
+    qDebug() << "MainWindow::onOctaveChanged - octave:" << octave << "showing octaves C" << octave << " to C" << (octave + 3);
+    // Update the keyboard widget's current octave
+    keyboardWidget_->setCurrentOctave(octave);
+    
+    // Update the octave label to show the range
+    octaveLabel_->setText(QString("C%1-C%2").arg(octave).arg(octave + 3));
+    
+    // Update keyboard mapping to reflect the new octave
+    updateKeyboardMapping();
+    qDebug() << "MainWindow::onOctaveChanged - keyboard mapping updated, Q key maps to note:" << keyToNoteMap_[Qt::Key_Q];
+}
+
 void MainWindow::updateKeyboardMapping()
 {
     // Get current octave from keyboard widget
     int currentOctave = keyboardWidget_->getCurrentOctave();
-    int octaveStart = currentOctave * 12; // Calculate starting note for current octave
+    int octaveStart = currentOctave * 12; // Calculate starting note for current octave (C0=0, C1=12, C2=24, etc.)
     
     // Clear existing mapping
     keyToNoteMap_.clear();
@@ -268,9 +369,3 @@ void MainWindow::onTrackerNoteReleased(int note, int channel) {
     }
 }
 
-void MainWindow::onOctaveChanged(int octave) {
-    keyboardWidget_->setCurrentOctave(octave);
-    octaveLabel_->setText(QString("C%1").arg(octave));
-    updateKeyboardMapping(); // Update keyboard mapping for new octave
-    qDebug() << "Octave changed to:" << octave;
-}

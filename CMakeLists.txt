@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(FMSynthesizer VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6
@@ -19,13 +19,13 @@ include_directories(include)
 # Source files
 set(SOURCES
     src/main.cpp
-    src/mainwindow.cpp
-    src/mainwindow_ui_setup.cpp
-    src/mainwindow_controls.cpp
-    src/mainwindow_synthesizer.cpp
-    src/mainwindow_internals.cpp
-    src/keyboardwidget.cpp
-    src/tracker.cpp
+    src/window/main.cpp
+    src/window/setup.cpp
+    src/window/controls.cpp
+    src/window/synthesizer.cpp
+    src/window/internals.cpp
+    src/widget/keyboard.cpp
+    src/window/tracker.cpp
     src/fm.cpp
     src/algorithms.cpp
     src/presets.cpp
@@ -33,9 +33,9 @@ set(SOURCES
 
 # Header files
 set(HEADERS
-    include/mainwindow.hpp
-    include/keyboardwidget.hpp
-    include/tracker.hpp
+    include/window/main.hpp
+    include/widget/keyboard.hpp
+    include/window/tracker.hpp
     include/fm.hpp
     include/presets.hpp
 )
@@ -49,7 +49,3 @@ target_link_libraries(FMSynthesizer
     Qt6::Widgets
     Qt6::Multimedia
 )
-
-# Copy FM synthesis files
-configure_file(/home/sq/ToyBASIC/src/fm.cpp src/fm.cpp COPYONLY)
-configure_file(/home/sq/ToyBASIC/include/fm.hpp include/fm.hpp COPYONLY)

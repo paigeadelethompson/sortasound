@@ -1,4 +1,4 @@
-#include "keyboardwidget.hpp"
+#include "widget/keyboard.hpp"
 #include <QPainter>
 #include <QMouseEvent>
 #include <QResizeEvent>
@@ -49,7 +49,10 @@ void KeyboardWidget::setAlignment(Qt::Alignment alignment)
 void KeyboardWidget::setCurrentOctave(int octave)
 {
     currentOctave_ = qBound(MIN_OCTAVE, octave, MAX_OCTAVE);
+    pressedNotes_.clear(); // Clear pressed notes when octave changes
+    qDebug() << "KeyboardWidget::setCurrentOctave - octave:" << currentOctave_ << "showing octaves C" << currentOctave_ << " to C" << (currentOctave_ + 3);
     setupKeys();
+    update(); // Force repaint after octave change
 }
 
 void KeyboardWidget::setupKeys()
@@ -60,9 +63,15 @@ void KeyboardWidget::setupKeys()
     int availableWidth = width(); // Use full width, no margins
     int totalWhiteKeys = OCTAVES_DISPLAYED * WHITE_KEYS_PER_OCTAVE; // 4 octaves * 7 white keys = 28 white keys
     
+    qDebug() << "KeyboardWidget::setupKeys - Widget size:" << size() << "availableWidth:" << availableWidth;
+    
     // Use full available width for keys to eliminate right padding
     int whiteKeyWidth = availableWidth / totalWhiteKeys; // Use exact division to fill full width
     int blackKeyWidth = qMax(3, static_cast<int>(whiteKeyWidth * 0.6)); // Minimum 3px for black keys
+    
+    // Calculate remaining width to distribute to the last few keys
+    int totalKeyWidth = totalWhiteKeys * whiteKeyWidth;
+    int remainingWidth = availableWidth - totalKeyWidth;
     
     qDebug() << "KeyboardWidget::setupKeys - availableWidth:" << availableWidth << "whiteKeyWidth:" << whiteKeyWidth;
     
@@ -73,7 +82,8 @@ void KeyboardWidget::setupKeys()
     std::vector<bool> octavePattern = {false, true, false, true, false, false, true, false, true, false, true, false}; // C, C#, D, D#, E, F, F#, G, G#, A, A#, B
     
     int x = startX;
-    int note = currentOctave_ * 12; // Calculate starting note for current octave
+    int note = currentOctave_ * 12; // Calculate starting note for current octave (C0=0, C1=12, C2=24, etc.)
+    int whiteKeyCount = 0; // Track white key count for width distribution
     
     // Create keys for 4 octaves
     for (int octave = 0; octave < OCTAVES_DISPLAYED; octave++) {
@@ -87,13 +97,28 @@ void KeyboardWidget::setupKeys()
                 // Position black keys between white keys
                 key.rect = QRect(x - blackKeyWidth/2, 0, blackKeyWidth, BLACK_KEY_HEIGHT);
             } else {
-                // White keys
-                key.rect = QRect(x, 0, whiteKeyWidth, KEY_HEIGHT);
-                x += whiteKeyWidth;
+                // White keys - distribute remaining width to the last few keys
+                int currentWhiteKeyWidth = whiteKeyWidth;
+                if (whiteKeyCount >= totalWhiteKeys - remainingWidth) {
+                    currentWhiteKeyWidth += 1; // Add 1 pixel to the last few keys
+                }
+                
+                key.rect = QRect(x, 0, currentWhiteKeyWidth, KEY_HEIGHT);
+                x += currentWhiteKeyWidth;
+                whiteKeyCount++;
             }
             
             keys_.push_back(key);
             note++;
+        }
+    }
+    
+    qDebug() << "KeyboardWidget::setupKeys - Created" << keys_.size() << "keys, showing octaves C" << currentOctave_ << " to C" << (currentOctave_ + 3) << " (notes" << keys_[0].note << "to" << keys_.back().note << ")";
+    
+    // Debug: Check if keys have valid rectangles
+    for (size_t i = 0; i < keys_.size(); i += 12) { // Check every 12th key (one per octave)
+        if (i < keys_.size()) {
+            qDebug() << "Key" << i << "note:" << keys_[i].note << "rect:" << keys_[i].rect << "isBlack:" << keys_[i].isBlack;
         }
     }
     
@@ -112,9 +137,12 @@ void KeyboardWidget::resizeEvent(QResizeEvent *event)
 void KeyboardWidget::updateActiveStates()
 {
     for (auto& key : keys_) {
-        key.isActive = (activeNotes_.find(key.note) != activeNotes_.end());
+        // A key is active if it's either in activeNotes_ (from synthesizer) or pressedNotes_ (from mouse)
+        key.isActive = (activeNotes_.find(key.note) != activeNotes_.end()) || 
+                      (pressedNotes_.find(key.note) != pressedNotes_.end());
     }
 }
+
 
 void KeyboardWidget::paintEvent(QPaintEvent *event)
 {
@@ -190,7 +218,13 @@ void KeyboardWidget::mousePressEvent(QMouseEvent *event)
 {
     KeyInfo* key = getKeyAt(event->pos());
     if (key) {
+        qDebug() << "KeyboardWidget::mousePressEvent - Key pressed, note:" << key->note;
+        pressedNotes_.insert(key->note); // Track pressed note
+        updateActiveStates(); // Update visual state
+        update(); // Force repaint
         emit keyPressed(key->note);
+    } else {
+        qDebug() << "KeyboardWidget::mousePressEvent - No key found at position:" << event->pos();
     }
 }
 
@@ -198,7 +232,30 @@ void KeyboardWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     KeyInfo* key = getKeyAt(event->pos());
     if (key) {
+        qDebug() << "KeyboardWidget::mouseReleaseEvent - Key released, note:" << key->note;
+        pressedNotes_.erase(key->note); // Remove from pressed notes
+        updateActiveStates(); // Update visual state
+        update(); // Force repaint
         emit keyReleased(key->note);
+    }
+}
+
+void KeyboardWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    // Handle mouse drag - if mouse is pressed and moves outside a key, release it
+    if (event->buttons() & Qt::LeftButton) {
+        KeyInfo* key = getKeyAt(event->pos());
+        if (!key) {
+            // Mouse moved outside any key, release all pressed notes
+            if (!pressedNotes_.empty()) {
+                for (int note : pressedNotes_) {
+                    emit keyReleased(note);
+                }
+                pressedNotes_.clear();
+                updateActiveStates();
+                update();
+            }
+        }
     }
 }
 
@@ -218,8 +275,10 @@ KeyboardWidget::KeyInfo* KeyboardWidget::getKeyAt(const QPoint& pos)
 {
     for (auto& key : keys_) {
         if (key.rect.contains(pos)) {
+            qDebug() << "KeyboardWidget::getKeyAt - Found key at pos:" << pos << "note:" << key.note << "rect:" << key.rect;
             return &key;
         }
     }
+    qDebug() << "KeyboardWidget::getKeyAt - No key found at pos:" << pos << "total keys:" << keys_.size();
     return nullptr;
 }

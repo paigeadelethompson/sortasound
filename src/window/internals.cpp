@@ -1,4 +1,4 @@
-#include "mainwindow.hpp"
+#include "window/main.hpp"
 
 void MainWindow::setupInternalsTabConnections()
 {

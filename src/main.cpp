@@ -3,7 +3,7 @@
 #include <QMessageBox>
 #include <QDebug>
 
-#include "mainwindow.hpp"
+#include "window/main.hpp"
 
 int main(int argc, char *argv[])
 {

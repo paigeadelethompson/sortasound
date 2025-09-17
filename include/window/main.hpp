@@ -19,9 +19,9 @@
 #include <set>
 #include <vector>
 
-#include "presets.hpp"
-#include "keyboardwidget.hpp"
-#include "fm.hpp"
+#include "../presets.hpp"
+#include "../widget/keyboard.hpp"
+#include "../fm.hpp"
 #include "tracker.hpp"
 
 class MainWindow : public QMainWindow
@@ -49,15 +49,19 @@ private slots:
     void onPitchBendChanged(int value);
     void onModWheelChanged(int value);
     void onOperatorParameterChanged();
-    void onSynthesizerChanged(int index);
-    void onAddSynthesizer();
-    void onRemoveSynthesizer();
     void refreshInternalsTab();
     void onTrackerNoteTriggered(int note, int velocity, int channel);
     void onTrackerNoteReleased(int note, int channel);
     void onOctaveChanged(int octave);
     void onKeyboardKeyPressed(int note);
     void onKeyboardKeyReleased(int note);
+    
+    // Tab-based synthesizer management methods
+    void onSynthesizerTabCloseRequested(int index);
+    void onAddSynthesizerTab();
+    void onSynthesizerTabChanged(int index);
+    QWidget* createSynthesizerTab();
+    void updateSynthesizerTabLabels();
 
 private:
     void setupUI();
@@ -68,7 +72,7 @@ private:
     void noteOn(int note);
     void noteOff(int note);
     void allNotesOff();
-    void updateSynthesizerSelector();
+    // updateSynthesizerSelector removed - using tab-based system
     toybasic::FMSynthesizer* getCurrentSynthesizer();
 
     // UI Components
@@ -76,6 +80,7 @@ private:
     QVBoxLayout *mainLayout_;
     QHBoxLayout *controlsLayout_;
     QTabWidget *mainTabWidget_;
+    QTabWidget *synthesizerTabWidget_;
     
     
     // FM Synthesizer instances
@@ -145,10 +150,7 @@ private:
     QComboBox *channelCombo_;
     
     // Synthesizer management
-    QGroupBox *synthManagerGroup_;
-    QComboBox *synthSelector_;
-    QPushButton *addSynthButton_;
-    QPushButton *removeSynthButton_;
+    // Synthesizer management moved to tab-based system
     
     // Keyboard mapping
     std::map<Qt::Key, int> keyToNoteMap_;

@@ -1,4 +1,4 @@
-#include "mainwindow.hpp"
+#include "window/main.hpp"
 #include <QApplication>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -32,7 +32,7 @@ void MainWindow::setupUI()
     // Create keyboard widget (now takes full width)
     keyboardWidget_ = new KeyboardWidget(this);
     keyboardWidget_->setMinimumHeight(100);
-    keyboardWidget_->setMinimumWidth(200); // Set a reasonable minimum width for 4 octaves
+    keyboardWidget_->setMinimumWidth(0); // Allow keyboard to use full available width
     keyboardWidget_->setAlignment(Qt::AlignLeft); // Align keyboard to the left to remove padding
     keyboardWidget_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); // Allow horizontal expansion
     keyboardWidget_->setContentsMargins(0, 0, 0, 0); // Remove padding around keyboard
@@ -106,8 +106,8 @@ void MainWindow::setupUI()
     octaveGroup->setMinimumHeight(100); // Set minimum height only
     
     octaveSpinBox_ = new QSpinBox(synthesizerTab);
-    octaveSpinBox_->setRange(2, 4); // C2 to C4 (since we show 4 octaves, max is C4 to show C4-C7)
-    octaveSpinBox_->setValue(2); // Start at C2 to show C2-C5
+    octaveSpinBox_->setRange(0, 8); // C0 to C8 (shows 4 octaves starting from selected octave)
+    octaveSpinBox_->setValue(2); // Start at C2 to show C2, C3, C4, C5
     octaveSpinBox_->setSuffix(" (C)");
     connect(octaveSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::onOctaveChanged);
     
@@ -260,27 +260,7 @@ void MainWindow::setupUI()
     channelLayout->addWidget(channelCombo_);
     controlsHorizontalLayout->addWidget(channelGroup_);
     
-    // Synthesizer management
-    synthManagerGroup_ = new QGroupBox("Synthesizers", controlsTab);
-    QVBoxLayout *synthManagerLayout = new QVBoxLayout(synthManagerGroup_);
-    
-    synthSelector_ = new QComboBox(controlsTab);
-    connect(synthSelector_, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &MainWindow::onSynthesizerChanged);
-    
-    QHBoxLayout *synthButtonLayout = new QHBoxLayout();
-    addSynthButton_ = new QPushButton("Add Synth", controlsTab);
-    removeSynthButton_ = new QPushButton("Remove Synth", controlsTab);
-    
-    connect(addSynthButton_, &QPushButton::clicked, this, &MainWindow::onAddSynthesizer);
-    connect(removeSynthButton_, &QPushButton::clicked, this, &MainWindow::onRemoveSynthesizer);
-    
-    synthButtonLayout->addWidget(addSynthButton_);
-    synthButtonLayout->addWidget(removeSynthButton_);
-    
-    synthManagerLayout->addWidget(synthSelector_);
-    synthManagerLayout->addLayout(synthButtonLayout);
-    controlsHorizontalLayout->addWidget(synthManagerGroup_);
+    // Synthesizer management removed - will be implemented as tab-based system
     
     // Add the horizontal layout to the vertical tab layout
     controlsTabLayout->addLayout(controlsHorizontalLayout);
@@ -503,8 +483,27 @@ void MainWindow::setupUI()
     
     synthesizerLayout->addWidget(advancedTabWidget);
     
-    // Add Synthesizer tab to main tab widget
-    mainTabWidget_->addTab(synthesizerTab, "Synthesizer");
+    // Create synthesizer tab widget for multiple synthesizers
+    synthesizerTabWidget_ = new QTabWidget();
+    synthesizerTabWidget_->setTabsClosable(true); // Enable X buttons on tabs
+    synthesizerTabWidget_->setMovable(true); // Allow tab reordering
+    
+    // Connect tab widget signals
+    connect(synthesizerTabWidget_, &QTabWidget::tabCloseRequested, this, &MainWindow::onSynthesizerTabCloseRequested);
+    connect(synthesizerTabWidget_, &QTabWidget::currentChanged, this, &MainWindow::onSynthesizerTabChanged);
+    
+    // Add the first synthesizer tab
+    synthesizerTabWidget_->addTab(synthesizerTab, "Synth 1");
+    
+    // Add + button for adding new synthesizer tabs
+    QPushButton *addSynthButton = new QPushButton("+");
+    addSynthButton->setFixedSize(30, 30);
+    addSynthButton->setToolTip("Add new synthesizer");
+    connect(addSynthButton, &QPushButton::clicked, this, &MainWindow::onAddSynthesizerTab);
+    synthesizerTabWidget_->setCornerWidget(addSynthButton, Qt::TopRightCorner);
+    
+    // Add Synthesizer tab widget to main tab widget
+    mainTabWidget_->addTab(synthesizerTabWidget_, "Synthesizers");
     
     // Create Tracker tab
     trackerWidget_ = new TrackerWidget();
@@ -516,8 +515,7 @@ void MainWindow::setupUI()
     // Add Tracker tab to main tab widget
     mainTabWidget_->addTab(trackerWidget_, "Tracker");
     
-    // Initialize synthesizer selector after all UI elements are created
-    updateSynthesizerSelector();
+    // Synthesizer selector no longer needed - using tab-based system
     
     // Set window properties
     setWindowTitle("FM Synthesizer - Advanced 4-Operator FM Synthesizer");
