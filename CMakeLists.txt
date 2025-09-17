@@ -25,19 +25,21 @@ set(SOURCES
     src/window/synthesizer.cpp
     src/window/internals.cpp
     src/widget/keyboard.cpp
-    src/window/tracker.cpp
+    src/widget/operator.cpp
     src/fm/fm.cpp
     src/fm/algorithms.cpp
     src/fm/presets.cpp
+    src/theme/theme.cpp
 )
 
 # Header files
 set(HEADERS
     include/window/main.hpp
     include/widget/keyboard.hpp
-    include/window/tracker.hpp
+    include/widget/operator.hpp
     include/fm/fm.hpp
     include/fm/presets.hpp
+    include/theme/theme.hpp
 )
 
 # Create executable

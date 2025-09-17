@@ -169,6 +169,18 @@ void MainWindow::onPitchBendChanged(int value)
         synth->setPitchBend(currentChannel_, bend);
     }
     pitchBendLabel_->setText(QString("%1").arg(value));
+    
+    // Start timer to return to zero when released
+    if (pitchBendReturnTimer_) {
+        pitchBendReturnTimer_->stop();
+    }
+    pitchBendReturnTimer_ = new QTimer(this);
+    pitchBendReturnTimer_->setSingleShot(true);
+    pitchBendReturnTimer_->setInterval(100); // 100ms delay
+    connect(pitchBendReturnTimer_, &QTimer::timeout, [this]() {
+        pitchBendSlider_->setValue(0);
+    });
+    pitchBendReturnTimer_->start();
 }
 
 /**
@@ -182,7 +194,7 @@ void MainWindow::onPitchBendChanged(int value)
  */
 void MainWindow::onModWheelChanged(int value)
 {
-    double mod = value / 127.0; // Convert to 0.0 to 1.0 range
+    double mod = (value + 64) / 127.0; // Convert from -64 to 63 range to 0.0 to 1.0 range
     if (auto* synth = getCurrentSynthesizer()) {
         synth->setModulationWheel(currentChannel_, mod);
     }

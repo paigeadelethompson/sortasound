@@ -7,6 +7,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include "../theme/theme.hpp"
 
 class KeyboardWidget : public QWidget
 {
@@ -58,10 +59,12 @@ private:
     static constexpr int KEY_HEIGHT = 100;
     static constexpr int BLACK_KEY_HEIGHT = 60;
     
-    static const QColor WHITE_KEY_COLOR;
-    static const QColor BLACK_KEY_COLOR;
-    static const QColor ACTIVE_KEY_COLOR;
-    static const QColor KEY_BORDER_COLOR;
+    // Theme-aware color getters
+    QColor getWhiteKeyColor() const;
+    QColor getBlackKeyColor() const;
+    QColor getActiveKeyColor() const;
+    QColor getKeyBorderColor() const;
+    QColor getKeyTextColor() const;
     
     static constexpr int KEYS_PER_OCTAVE = 12;
     static constexpr int WHITE_KEYS_PER_OCTAVE = 7;

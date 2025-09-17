@@ -39,8 +39,8 @@
 
 #include "../fm/presets.hpp"
 #include "../widget/keyboard.hpp"
+#include "../widget/operator.hpp"
 #include "../fm/fm.hpp"
-#include "tracker.hpp"
 
 class MainWindow : public QMainWindow
 {
@@ -68,17 +68,10 @@ private slots:
     void onModWheelChanged(int value);
     void onOperatorParameterChanged();
     void refreshInternalsTab();
-    void onTrackerNoteTriggered(int note, int velocity, int channel);
-    void onTrackerNoteReleased(int note, int channel);
     void onOctaveChanged(int octave);
     void onKeyboardKeyPressed(int note);
     void onKeyboardKeyReleased(int note);
     
-    void onSynthesizerTabCloseRequested(int index);
-    void onAddSynthesizerTab();
-    void onSynthesizerTabChanged(int index);
-    QWidget* createSynthesizerTab();
-    void updateSynthesizerTabLabels();
 
 private:
     void setupUI();
@@ -94,8 +87,6 @@ private:
     QWidget *centralWidget_;
     QVBoxLayout *mainLayout_;
     QHBoxLayout *controlsLayout_;
-    QTabWidget *mainTabWidget_;
-    QTabWidget *synthesizerTabWidget_;
     
     
     std::vector<std::unique_ptr<toybasic::FMSynthesizer>> synthesizers_;
@@ -104,8 +95,7 @@ private:
     std::unique_ptr<toybasic::PresetManager> presetManager_;
     
     KeyboardWidget *keyboardWidget_;
-    
-    TrackerWidget *trackerWidget_;
+    OperatorGraphWidget *operatorGraphWidget_;
     
     QGroupBox *octaveGroup_;
     QSpinBox *octaveSpinBox_;
@@ -154,6 +144,8 @@ private:
     
     QGroupBox *channelGroup_;
     QComboBox *channelCombo_;
+    
+    QTimer *pitchBendReturnTimer_;
     
     std::map<Qt::Key, int> keyToNoteMap_;
     std::set<int> activeNotes_;

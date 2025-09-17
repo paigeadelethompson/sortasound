@@ -40,11 +40,10 @@ MainWindow::MainWindow(QWidget *parent)
     , centralWidget_(nullptr)
     , mainLayout_(nullptr)
     , controlsLayout_(nullptr)
-    , mainTabWidget_(nullptr)
     , currentSynthesizerIndex_(0)
     , presetManager_(std::make_unique<toybasic::PresetManager>())
     , keyboardWidget_(nullptr)
-    , trackerWidget_(nullptr)
+    , operatorGraphWidget_(nullptr)
     , octaveGroup_(nullptr)
     , octaveSpinBox_(nullptr)
     , octaveLabel_(nullptr)
@@ -85,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
     , modWheelLabel_(nullptr)
     , channelGroup_(nullptr)
     , channelCombo_(nullptr)
-    , synthesizerTabWidget_(nullptr)
+    , pitchBendReturnTimer_(nullptr)
     , currentChannel_(0)
 {
     setupUI();
@@ -153,105 +152,6 @@ void MainWindow::onKeyboardKeyReleased(int note)
     }
 }
 
-/**
- * @brief Handle synthesizer tab close requests
- * 
- * Called when the user requests to close a synthesizer tab.
- * Prevents closing the last remaining tab and properly cleans up
- * the synthesizer instance.
- * 
- * @param index The index of the tab to close
- */
-void MainWindow::onSynthesizerTabCloseRequested(int index)
-{
-    if (synthesizerTabWidget_->count() <= 1) {
-        return;
-    }
-    
-    if (index < synthesizers_.size()) {
-        synthesizers_.erase(synthesizers_.begin() + index);
-    }
-    
-    synthesizerTabWidget_->removeTab(index);
-    
-    if (currentSynthesizerIndex_ >= synthesizers_.size()) {
-        currentSynthesizerIndex_ = synthesizers_.size() - 1;
-    }
-    
-    updateSynthesizerTabLabels();
-}
-
-/**
- * @brief Add a new synthesizer tab
- * 
- * Creates a new synthesizer instance and adds a new tab to the synthesizer
- * tab widget. The new synthesizer is automatically started.
- */
-void MainWindow::onAddSynthesizerTab()
-{
-    auto newSynthesizer = std::make_unique<toybasic::FMSynthesizer>();
-    synthesizers_.push_back(std::move(newSynthesizer));
-    
-    QWidget *newSynthTab = createSynthesizerTab();
-    
-    int newIndex = synthesizerTabWidget_->count();
-    synthesizerTabWidget_->addTab(newSynthTab, QString("Synth %1").arg(newIndex + 1));
-    
-    synthesizerTabWidget_->setCurrentIndex(newIndex);
-    
-    currentSynthesizerIndex_ = newIndex;
-    
-    updateSynthesizerTabLabels();
-}
-
-/**
- * @brief Handle synthesizer tab changes
- * 
- * Called when the user switches between synthesizer tabs. Updates the
- * current synthesizer index to match the active tab.
- * 
- * @param index The index of the newly active tab
- */
-void MainWindow::onSynthesizerTabChanged(int index)
-{
-    currentSynthesizerIndex_ = index;
-}
-
-/**
- * @brief Create a new synthesizer tab widget
- * 
- * Creates a new tab widget containing a keyboard widget and controls layout.
- * This is used when adding new synthesizer instances.
- * 
- * @return Pointer to the new tab widget
- */
-QWidget* MainWindow::createSynthesizerTab()
-{
-    QWidget *newTab = new QWidget();
-    QVBoxLayout *layout = new QVBoxLayout(newTab);
-    
-    layout->addWidget(keyboardWidget_);
-    
-    layout->addLayout(controlsLayout_);
-    
-    QTabWidget *advancedTabWidget = new QTabWidget();
-    layout->addWidget(advancedTabWidget);
-    
-    return newTab;
-}
-
-/**
- * @brief Update synthesizer tab labels
- * 
- * Updates the text labels for all synthesizer tabs to reflect their
- * current numbering (Synth 1, Synth 2, etc.).
- */
-void MainWindow::updateSynthesizerTabLabels()
-{
-    for (int i = 0; i < synthesizerTabWidget_->count(); ++i) {
-        synthesizerTabWidget_->setTabText(i, QString("Synth %1").arg(i + 1));
-    }
-}
 
 /**
  * @brief Handle octave selection changes
@@ -461,34 +361,4 @@ void MainWindow::allNotesOff()
     keyboardWidget_->setActiveNotes(activeNotes_);
 }
 
-/**
- * @brief Handle tracker note trigger events
- * 
- * Called when the tracker widget triggers a note. Starts playing
- * the note on the current synthesizer.
- * 
- * @param note The MIDI note number to play
- * @param velocity The note velocity (0-127)
- * @param channel The MIDI channel
- */
-void MainWindow::onTrackerNoteTriggered(int note, int velocity, int channel) {
-    if (auto* synth = getCurrentSynthesizer()) {
-        synth->noteOn(note);
-    }
-}
-
-/**
- * @brief Handle tracker note release events
- * 
- * Called when the tracker widget releases a note. Stops playing
- * the note on the current synthesizer.
- * 
- * @param note The MIDI note number to stop
- * @param channel The MIDI channel
- */
-void MainWindow::onTrackerNoteReleased(int note, int channel) {
-    if (auto* synth = getCurrentSynthesizer()) {
-        synth->noteOff(note);
-    }
-}
 

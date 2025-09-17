@@ -21,6 +21,7 @@
 #include <QMessageBox>
 
 #include "window/main.hpp"
+#include "theme/theme.hpp"
 
 /**
  * @brief Main entry point for the SortaSound FM Synthesizer application
@@ -40,6 +41,9 @@ int main(int argc, char *argv[])
     app.setApplicationName("SortaSound");
     app.setApplicationVersion("1.0.0");
     app.setOrganizationName("Paige Thompson");
+    
+    // Apply Catppuccin Frappé theme
+    ThemeManager::getInstance().applyTheme(&app);
     
     try {
         MainWindow window;

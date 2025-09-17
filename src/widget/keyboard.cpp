@@ -23,10 +23,31 @@
 #include <QApplication>
 #include <algorithm>
 
-const QColor KeyboardWidget::WHITE_KEY_COLOR = QColor(255, 255, 255);
-const QColor KeyboardWidget::BLACK_KEY_COLOR = QColor(64, 64, 64);
-const QColor KeyboardWidget::ACTIVE_KEY_COLOR = QColor(255, 200, 100);
-const QColor KeyboardWidget::KEY_BORDER_COLOR = QColor(128, 128, 128);
+// Piano key colors with glossy gradients
+QColor KeyboardWidget::getWhiteKeyColor() const
+{
+    return QColor(255, 255, 255); // Pure white for piano keys
+}
+
+QColor KeyboardWidget::getBlackKeyColor() const
+{
+    return QColor(32, 32, 32); // Dark gray/black for piano keys
+}
+
+QColor KeyboardWidget::getActiveKeyColor() const
+{
+    return ThemeManager::getInstance().getColor("blue"); // Use theme color for active state
+}
+
+QColor KeyboardWidget::getKeyBorderColor() const
+{
+    return QColor(128, 128, 128); // Gray border for piano keys
+}
+
+QColor KeyboardWidget::getKeyTextColor() const
+{
+    return QColor(64, 64, 64); // Dark gray text for piano keys
+}
 
 /**
  * @brief Constructor for KeyboardWidget
@@ -224,7 +245,7 @@ void KeyboardWidget::paintEvent(QPaintEvent *event)
             drawKey(painter, key);
         }
     }
-    painter.setPen(Qt::black);
+    painter.setPen(getKeyTextColor());
     painter.setFont(QFont("Arial", 7));
     
     QString noteNames[] = {"C", "D", "E", "F", "G", "A", "B"};
@@ -258,20 +279,76 @@ void KeyboardWidget::paintEvent(QPaintEvent *event)
  */
 void KeyboardWidget::drawKey(QPainter& painter, const KeyInfo& key)
 {
-    QColor fillColor = key.isBlack ? BLACK_KEY_COLOR : WHITE_KEY_COLOR;
+    QRect keyRect = key.rect;
     
     if (key.isActive) {
-        fillColor = ACTIVE_KEY_COLOR;
-    }
-    
-    painter.setBrush(fillColor);
-    painter.setPen(QPen(KEY_BORDER_COLOR, 1));
-    painter.drawRect(key.rect);
-    
-    if (key.isActive) {
-        painter.setBrush(QColor(255, 255, 255, 50));
+        // Active key - use theme color with glossy effect
+        QLinearGradient activeGradient(keyRect.topLeft(), keyRect.bottomLeft());
+        QColor activeColor = getActiveKeyColor();
+        activeGradient.setColorAt(0, activeColor.lighter(120));
+        activeGradient.setColorAt(0.3, activeColor);
+        activeGradient.setColorAt(0.7, activeColor.darker(110));
+        activeGradient.setColorAt(1, activeColor.darker(120));
+        
+        painter.setBrush(activeGradient);
+        painter.setPen(QPen(getKeyBorderColor(), 2));
+        painter.drawRect(keyRect);
+        
+        // Add glossy highlight
+        QLinearGradient highlightGradient(keyRect.topLeft(), keyRect.bottomLeft());
+        highlightGradient.setColorAt(0, QColor(255, 255, 255, 80));
+        highlightGradient.setColorAt(0.3, QColor(255, 255, 255, 40));
+        highlightGradient.setColorAt(1, QColor(255, 255, 255, 0));
+        
+        painter.setBrush(highlightGradient);
         painter.setPen(Qt::NoPen);
-        painter.drawRect(key.rect.adjusted(2, 2, -2, -2));
+        painter.drawRect(keyRect.adjusted(1, 1, -1, -1));
+    } else {
+        // Inactive key - traditional piano colors with glossy effect
+        if (key.isBlack) {
+            // Black key gradient - more subtle, less glossy
+            QLinearGradient blackGradient(keyRect.topLeft(), keyRect.bottomLeft());
+            blackGradient.setColorAt(0, QColor(48, 48, 48));   // Slightly lighter at top
+            blackGradient.setColorAt(0.3, QColor(32, 32, 32)); // Dark gray
+            blackGradient.setColorAt(0.7, QColor(24, 24, 24)); // Darker gray
+            blackGradient.setColorAt(1, QColor(16, 16, 16));   // Very dark at bottom
+            
+            painter.setBrush(blackGradient);
+            painter.setPen(QPen(QColor(64, 64, 64), 1));
+            painter.drawRect(keyRect);
+            
+            // Very subtle highlight - much less glossy
+            QLinearGradient blackHighlight(keyRect.topLeft(), keyRect.bottomLeft());
+            blackHighlight.setColorAt(0, QColor(80, 80, 80, 20));  // Much more subtle
+            blackHighlight.setColorAt(0.2, QColor(80, 80, 80, 8)); // Very light
+            blackHighlight.setColorAt(1, QColor(80, 80, 80, 0));   // Fade to nothing
+            
+            painter.setBrush(blackHighlight);
+            painter.setPen(Qt::NoPen);
+            painter.drawRect(keyRect.adjusted(1, 1, -1, -1));
+        } else {
+            // White key gradient
+            QLinearGradient whiteGradient(keyRect.topLeft(), keyRect.bottomLeft());
+            whiteGradient.setColorAt(0, QColor(255, 255, 255));     // Pure white at top
+            whiteGradient.setColorAt(0.3, QColor(248, 248, 248));   // Slightly off-white
+            whiteGradient.setColorAt(0.7, QColor(240, 240, 240));   // Light gray
+            whiteGradient.setColorAt(1, QColor(232, 232, 232));     // Slightly darker at bottom
+            
+            painter.setBrush(whiteGradient);
+            painter.setPen(QPen(getKeyBorderColor(), 1));
+            painter.drawRect(keyRect);
+            
+            // Add glossy highlight to white keys
+            QLinearGradient whiteHighlight(keyRect.topLeft(), keyRect.bottomLeft());
+            whiteHighlight.setColorAt(0, QColor(255, 255, 255, 120));
+            whiteHighlight.setColorAt(0.2, QColor(255, 255, 255, 60));
+            whiteHighlight.setColorAt(0.5, QColor(255, 255, 255, 20));
+            whiteHighlight.setColorAt(1, QColor(255, 255, 255, 0));
+            
+            painter.setBrush(whiteHighlight);
+            painter.setPen(Qt::NoPen);
+            painter.drawRect(keyRect.adjusted(1, 1, -1, -1));
+        }
     }
 }
 

@@ -17,6 +17,7 @@
  */
 
 #include "window/main.hpp"
+#include "widget/operator.hpp"
 #include <QApplication>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -49,15 +50,6 @@ void MainWindow::setupUI()
     mainLayout_->setContentsMargins(0, 0, 0, 0); // Remove all margins from main layout
     mainLayout_->setSpacing(0); // Remove spacing
     
-    mainTabWidget_ = new QTabWidget(this);
-    mainTabWidget_->setContentsMargins(0, 0, 0, 0); // Remove margins from tab widget
-    mainLayout_->addWidget(mainTabWidget_);
-    
-    QWidget *synthesizerTab = new QWidget();
-    QVBoxLayout *synthesizerLayout = new QVBoxLayout(synthesizerTab);
-    synthesizerLayout->setSpacing(0);
-    synthesizerLayout->setContentsMargins(0, 0, 0, 0);
-    
     keyboardWidget_ = new KeyboardWidget(this);
     keyboardWidget_->setMinimumHeight(100);
     keyboardWidget_->setMinimumWidth(0);
@@ -66,92 +58,100 @@ void MainWindow::setupUI()
     keyboardWidget_->setContentsMargins(0, 0, 0, 0);
     keyboardWidget_->setMouseTracking(false);
     
-    synthesizerLayout->addWidget(keyboardWidget_);
+    mainLayout_->addWidget(keyboardWidget_);
     
     controlsLayout_ = new QHBoxLayout();
-    QGroupBox *pitchBendGroup = new QGroupBox("Pitch Bend", synthesizerTab);
+    QGroupBox *pitchBendGroup = new QGroupBox("Pitch Bend", this);
     QVBoxLayout *pitchBendLayout = new QVBoxLayout(pitchBendGroup);
     pitchBendGroup->setMinimumHeight(100);
+    pitchBendGroup->setMinimumWidth(90); // Ensure "Pitch Bend" text fits
     
-    pitchBendSlider_ = new QSlider(Qt::Vertical, synthesizerTab);
+    pitchBendSlider_ = new QSlider(Qt::Vertical, this);
+    pitchBendSlider_->setObjectName("pitchBendSlider");
     pitchBendSlider_->setRange(-200, 200);
     pitchBendSlider_->setValue(0);
     pitchBendSlider_->setTickPosition(QSlider::TicksRight);
     pitchBendSlider_->setTickInterval(50);
     connect(pitchBendSlider_, &QSlider::valueChanged, this, &MainWindow::onPitchBendChanged);
     
-    pitchBendLabel_ = new QLabel("0", synthesizerTab);
+    pitchBendLabel_ = new QLabel("0", this);
     pitchBendLabel_->setAlignment(Qt::AlignCenter);
     
     pitchBendLayout->addWidget(pitchBendSlider_);
     pitchBendLayout->addWidget(pitchBendLabel_);
     controlsLayout_->addWidget(pitchBendGroup);
     
-    QGroupBox *modWheelGroup = new QGroupBox("Mod Wheel", synthesizerTab);
+    QGroupBox *modWheelGroup = new QGroupBox("Mod Wheel", this);
     QVBoxLayout *modWheelLayout = new QVBoxLayout(modWheelGroup);
     modWheelGroup->setMinimumHeight(100);
+    modWheelGroup->setMinimumWidth(80); // Ensure "Mod Wheel" text fits
     
-    modWheelSlider_ = new QSlider(Qt::Vertical, synthesizerTab);
-    modWheelSlider_->setRange(0, 127);
+    modWheelSlider_ = new QSlider(Qt::Vertical, this);
+    modWheelSlider_->setObjectName("modWheelSlider");
+    modWheelSlider_->setRange(-64, 63);
     modWheelSlider_->setValue(0);
     modWheelSlider_->setTickPosition(QSlider::TicksRight);
     modWheelSlider_->setTickInterval(20);
     connect(modWheelSlider_, &QSlider::valueChanged, this, &MainWindow::onModWheelChanged);
     
-    modWheelLabel_ = new QLabel("0", synthesizerTab);
+    modWheelLabel_ = new QLabel("0", this);
     modWheelLabel_->setAlignment(Qt::AlignCenter);
     
     modWheelLayout->addWidget(modWheelSlider_);
     modWheelLayout->addWidget(modWheelLabel_);
     controlsLayout_->addWidget(modWheelGroup);
     
-    volumeGroup_ = new QGroupBox("Volume", synthesizerTab);
+    volumeGroup_ = new QGroupBox("Volume", this);
     QVBoxLayout *volumeLayout = new QVBoxLayout(volumeGroup_);
     volumeGroup_->setMinimumHeight(100);
+    volumeGroup_->setMinimumWidth(70); // Ensure "Volume" text fits
     
-    volumeSlider_ = new QSlider(Qt::Vertical, synthesizerTab);
+    volumeSlider_ = new QSlider(Qt::Vertical, this);
+    volumeSlider_->setObjectName("volumeSlider");
     volumeSlider_->setRange(0, 100);
     volumeSlider_->setValue(50);
     volumeSlider_->setTickPosition(QSlider::TicksRight);
     volumeSlider_->setTickInterval(10);
     connect(volumeSlider_, &QSlider::valueChanged, this, &MainWindow::onVolumeChanged);
     
-    volumeLabel_ = new QLabel("50%", synthesizerTab);
+    volumeLabel_ = new QLabel("50%", this);
     volumeLabel_->setAlignment(Qt::AlignCenter);
     
     volumeLayout->addWidget(volumeSlider_);
     volumeLayout->addWidget(volumeLabel_);
     controlsLayout_->addWidget(volumeGroup_);
     
-    QGroupBox *octaveGroup = new QGroupBox("Octave", synthesizerTab);
+    QGroupBox *octaveGroup = new QGroupBox("Octave", this);
     QVBoxLayout *octaveLayout = new QVBoxLayout(octaveGroup);
     octaveGroup->setMinimumHeight(100);
     
-    octaveSpinBox_ = new QSpinBox(synthesizerTab);
+    octaveSpinBox_ = new QSpinBox(this);
+    octaveSpinBox_->setObjectName("octaveSpinBox");
     octaveSpinBox_->setRange(0, 8);
     octaveSpinBox_->setValue(2);
     octaveSpinBox_->setSuffix(" (C)");
+    // Set custom button text for better visibility
+    octaveSpinBox_->setButtonSymbols(QAbstractSpinBox::PlusMinus);
     connect(octaveSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::onOctaveChanged);
     
-    octaveLabel_ = new QLabel("C2", synthesizerTab);
+    octaveLabel_ = new QLabel("C2", this);
     octaveLabel_->setAlignment(Qt::AlignCenter);
     octaveLabel_->setStyleSheet("font-weight: bold; font-size: 12px;");
     
     octaveLayout->addWidget(octaveSpinBox_);
     octaveLayout->addWidget(octaveLabel_);
-    controlsLayout_->addWidget(octaveGroup);
+    // Create a vertical layout for combo box controls (octave, preset, algorithm, channel)
+    QVBoxLayout *comboControlsLayout = new QVBoxLayout();
     
-    synthesizerLayout->addLayout(controlsLayout_);
+    // Add octave to the combo controls layout
+    comboControlsLayout->addWidget(octaveGroup);
     
-    QTabWidget *controlsTabWidget = new QTabWidget(synthesizerTab);
-    QWidget *controlsTab = new QWidget();
-    QVBoxLayout *controlsTabLayout = new QVBoxLayout(controlsTab);
-    
-    QHBoxLayout *controlsHorizontalLayout = new QHBoxLayout();
-    presetGroup_ = new QGroupBox("Preset", controlsTab);
+    // Add preset, effects, algorithm, and channel controls to the same horizontal layout
+    presetGroup_ = new QGroupBox("Preset", this);
     QVBoxLayout *presetLayout = new QVBoxLayout(presetGroup_);
     
-    presetCombo_ = new QComboBox(controlsTab);
+    presetCombo_ = new QComboBox(this);
+    presetCombo_->setObjectName("presetCombo");
     
     auto presetNames = presetManager_->getPresetNames();
     for (const auto& presetName : presetNames) {
@@ -162,57 +162,68 @@ void MainWindow::setupUI()
             this, &MainWindow::onPresetChanged);
     
     presetLayout->addWidget(presetCombo_);
-    controlsHorizontalLayout->addWidget(presetGroup_);
+    comboControlsLayout->addWidget(presetGroup_);
     
-    effectsGroup_ = new QGroupBox("Effects", controlsTab);
-    QGridLayout *effectsLayout = new QGridLayout(effectsGroup_);
-    reverbSlider_ = new QSlider(Qt::Horizontal, controlsTab);
+    // Reverb group
+    QGroupBox *reverbGroup = new QGroupBox("Reverb", this);
+    QVBoxLayout *reverbLayout = new QVBoxLayout(reverbGroup);
+    reverbSlider_ = new QSlider(Qt::Vertical, this);
+    reverbSlider_->setObjectName("reverbSlider");
     reverbSlider_->setRange(0, 100);
     reverbSlider_->setValue(0);
-    reverbSlider_->setTickPosition(QSlider::TicksBelow);
+    reverbSlider_->setTickPosition(QSlider::TicksRight);
     reverbSlider_->setTickInterval(10);
     connect(reverbSlider_, &QSlider::valueChanged, this, &MainWindow::onReverbChanged);
     
-    reverbLabel_ = new QLabel("0%", controlsTab);
+    reverbLabel_ = new QLabel("0%", this);
     reverbLabel_->setAlignment(Qt::AlignCenter);
     
-    effectsLayout->addWidget(new QLabel("Reverb:", controlsTab), 0, 0);
-    effectsLayout->addWidget(reverbSlider_, 0, 1);
-    effectsLayout->addWidget(reverbLabel_, 0, 2);
+    reverbLayout->addWidget(reverbSlider_);
+    reverbLayout->addWidget(reverbLabel_);
     
-    chorusSlider_ = new QSlider(Qt::Horizontal, controlsTab);
+    // Chorus group
+    QGroupBox *chorusGroup = new QGroupBox("Chorus", this);
+    QVBoxLayout *chorusLayout = new QVBoxLayout(chorusGroup);
+    chorusSlider_ = new QSlider(Qt::Vertical, this);
+    chorusSlider_->setObjectName("chorusSlider");
     chorusSlider_->setRange(0, 100);
     chorusSlider_->setValue(0);
-    chorusSlider_->setTickPosition(QSlider::TicksBelow);
+    chorusSlider_->setTickPosition(QSlider::TicksRight);
     chorusSlider_->setTickInterval(10);
     connect(chorusSlider_, &QSlider::valueChanged, this, &MainWindow::onChorusChanged);
     
-    chorusLabel_ = new QLabel("0%", controlsTab);
+    chorusLabel_ = new QLabel("0%", this);
     chorusLabel_->setAlignment(Qt::AlignCenter);
     
-    effectsLayout->addWidget(new QLabel("Chorus:", controlsTab), 1, 0);
-    effectsLayout->addWidget(chorusSlider_, 1, 1);
-    effectsLayout->addWidget(chorusLabel_, 1, 2);
-    distortionSlider_ = new QSlider(Qt::Horizontal, controlsTab);
+    chorusLayout->addWidget(chorusSlider_);
+    chorusLayout->addWidget(chorusLabel_);
+    // Distortion group
+    QGroupBox *distortionGroup = new QGroupBox("Distortion", this);
+    QVBoxLayout *distortionLayout = new QVBoxLayout(distortionGroup);
+    distortionSlider_ = new QSlider(Qt::Vertical, this);
+    distortionSlider_->setObjectName("distortionSlider");
     distortionSlider_->setRange(0, 100);
     distortionSlider_->setValue(0);
-    distortionSlider_->setTickPosition(QSlider::TicksBelow);
+    distortionSlider_->setTickPosition(QSlider::TicksRight);
     distortionSlider_->setTickInterval(10);
     connect(distortionSlider_, &QSlider::valueChanged, this, &MainWindow::onDistortionChanged);
     
-    distortionLabel_ = new QLabel("0%", controlsTab);
+    distortionLabel_ = new QLabel("0%", this);
     distortionLabel_->setAlignment(Qt::AlignCenter);
     
-    effectsLayout->addWidget(new QLabel("Distortion:", controlsTab), 2, 0);
-    effectsLayout->addWidget(distortionSlider_, 2, 1);
-    effectsLayout->addWidget(distortionLabel_, 2, 2);
+    distortionLayout->addWidget(distortionSlider_);
+    distortionLayout->addWidget(distortionLabel_);
     
-    controlsHorizontalLayout->addWidget(effectsGroup_);
+    // Add the three effect groups to the main controls layout
+    controlsLayout_->addWidget(reverbGroup);
+    controlsLayout_->addWidget(chorusGroup);
+    controlsLayout_->addWidget(distortionGroup);
     
-    algorithmGroup_ = new QGroupBox("Algorithm", controlsTab);
+    algorithmGroup_ = new QGroupBox("Algorithm", this);
     QVBoxLayout *algorithmLayout = new QVBoxLayout(algorithmGroup_);
     
-    algorithmCombo_ = new QComboBox(controlsTab);
+    algorithmCombo_ = new QComboBox(this);
+    algorithmCombo_->setObjectName("algorithmCombo");
     algorithmCombo_->addItem("0: 6→5→4→3→2→1 (Serial Chain)");
     algorithmCombo_->addItem("1: 5,6→4→3→2→1 (Parallel Modulators)");
     algorithmCombo_->addItem("2: 6→5→4→3→2, 6→1 (Serial + Parallel)");
@@ -249,13 +260,15 @@ void MainWindow::setupUI()
     connect(algorithmCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onAlgorithmChanged);
     
-    algorithmLayout->addWidget(algorithmCombo_);
-    controlsHorizontalLayout->addWidget(algorithmGroup_);
     
-    channelGroup_ = new QGroupBox("Channel", controlsTab);
+    algorithmLayout->addWidget(algorithmCombo_);
+    comboControlsLayout->addWidget(algorithmGroup_);
+    
+    channelGroup_ = new QGroupBox("Channel", this);
     QVBoxLayout *channelLayout = new QVBoxLayout(channelGroup_);
     
-    channelCombo_ = new QComboBox(controlsTab);
+    channelCombo_ = new QComboBox(this);
+    channelCombo_->setObjectName("channelCombo");
     for (int i = 0; i < 8; i++) {
         channelCombo_->addItem(QString("Channel %1").arg(i + 1));
     }
@@ -264,17 +277,17 @@ void MainWindow::setupUI()
             this, &MainWindow::onChannelChanged);
     
     channelLayout->addWidget(channelCombo_);
-    controlsHorizontalLayout->addWidget(channelGroup_);
+    comboControlsLayout->addWidget(channelGroup_);
     
-    controlsTabLayout->addLayout(controlsHorizontalLayout);
+    // Add the combo controls layout to the main controls layout
+    controlsLayout_->addLayout(comboControlsLayout);
     
-    controlsTabWidget->addTab(controlsTab, "Controls");
+    // Now add the complete controls layout to the main layout
+    mainLayout_->addLayout(controlsLayout_);
     
-    synthesizerLayout->addWidget(controlsTabWidget);
-    
-    QTabWidget *advancedTabWidget = new QTabWidget(synthesizerTab);
+    QTabWidget *advancedTabWidget = new QTabWidget();
     QWidget *operatorsTab = new QWidget();
-    QVBoxLayout *operatorsLayout = new QVBoxLayout(operatorsTab);
+    QHBoxLayout *operatorsLayout = new QHBoxLayout(operatorsTab); // Changed to horizontal layout
     
     QGroupBox *infoGroup = new QGroupBox("Info", operatorsTab);
     QVBoxLayout *infoLayout = new QVBoxLayout(infoGroup);
@@ -293,12 +306,8 @@ void MainWindow::setupUI()
     infoLayout->addWidget(infoLabel);
     operatorsLayout->addWidget(infoGroup);
     
+    
     advancedTabWidget->addTab(operatorsTab, "Operators");
-    
-    QWidget *modulationTab = new QWidget();
-    QVBoxLayout *modulationLayout = new QVBoxLayout(modulationTab);
-    
-    advancedTabWidget->addTab(modulationTab, "Modulation");
     QWidget *internalsTab = new QWidget();
     QVBoxLayout *internalsLayout = new QVBoxLayout(internalsTab);
     
@@ -439,28 +448,7 @@ void MainWindow::setupUI()
     
     advancedTabWidget->addTab(internalsTab, "Internals");
     
-    synthesizerLayout->addWidget(advancedTabWidget);
-    synthesizerTabWidget_ = new QTabWidget();
-    synthesizerTabWidget_->setTabsClosable(true);
-    synthesizerTabWidget_->setMovable(true);
-    
-    connect(synthesizerTabWidget_, &QTabWidget::tabCloseRequested, this, &MainWindow::onSynthesizerTabCloseRequested);
-    connect(synthesizerTabWidget_, &QTabWidget::currentChanged, this, &MainWindow::onSynthesizerTabChanged);
-    
-    synthesizerTabWidget_->addTab(synthesizerTab, "Synth 1");
-    QPushButton *addSynthButton = new QPushButton("+");
-    addSynthButton->setFixedSize(30, 30);
-    addSynthButton->setToolTip("Add new synthesizer");
-    connect(addSynthButton, &QPushButton::clicked, this, &MainWindow::onAddSynthesizerTab);
-    synthesizerTabWidget_->setCornerWidget(addSynthButton, Qt::TopRightCorner);
-    
-    mainTabWidget_->addTab(synthesizerTabWidget_, "Synthesizers");
-    trackerWidget_ = new TrackerWidget();
-    
-    connect(trackerWidget_, &TrackerWidget::noteTriggered, this, &MainWindow::onTrackerNoteTriggered);
-    connect(trackerWidget_, &TrackerWidget::noteReleased, this, &MainWindow::onTrackerNoteReleased);
-    
-    mainTabWidget_->addTab(trackerWidget_, "Tracker");
+    mainLayout_->addWidget(advancedTabWidget);
     
     setWindowTitle("SortaSound - Advanced FM Synthesizer");
     setMinimumSize(800, 600);
