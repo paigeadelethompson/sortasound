@@ -660,6 +660,7 @@ double FMSynthesizer::generateOperatorOutput(Operator& op, double modulation) {
     
     double phase = op.phaseAccumulator + modRounded * op.modulationIndex;
     double output = 0.0;
+    /* not sure if this makes sense on a yamaha..... lol */
     switch (static_cast<WaveformType>(op.waveform)) {
         case WaveformType::SINE:
             output = sin(phase);
