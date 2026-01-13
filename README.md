@@ -1,3 +1,4 @@
+# IT IS NOT ACTUALLY COMPLETE LOL SURPRISED?
 # SortaSound - Advanced FM Synthesizer
 
 SortaSound is an advanced FM (Frequency Modulation) synthesizer application built with Qt6 and C++23. It features a comprehensive user interface with multiple synthesizer tabs, a virtual keyboard, tracker functionality, and extensive FM synthesis capabilities.
